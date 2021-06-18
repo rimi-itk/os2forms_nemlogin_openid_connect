@@ -1,8 +1,7 @@
 os2forms_nemlogin_openid_connect.openid_connect_authenticate:
-  path: '/os2forms_nemlogin_openid_connect/authenticate/{plugin_id}'
+  path: '/os2forms_nemlogin_openid_connect/authenticate'
   defaults:
     _controller: 'Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController::main'
-    plugin_id: OpenIDConnect
   requirements:
     # Anonymous users must be able to access this route.
     _access: 'TRUE'

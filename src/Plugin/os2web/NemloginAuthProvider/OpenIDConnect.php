@@ -7,6 +7,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
+use Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController;
 use Drupal\os2web_nemlogin\Form\AuthProviderBaseSettingsForm;
 use Drupal\os2web_nemlogin\Plugin\AuthProviderBase;
 use ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider;
@@ -32,12 +33,7 @@ class OpenIDConnect extends AuthProviderBase {
   /**
    * Session name for storing OIDC user token.
    */
-  public const SESSION_TOKEN = 'os2forms_nemlogin_openid_connect.user_token';
-
-  /**
-   * Session name for storing auth provider login location.
-   */
-  public const SESSION_LOGIN_LOCATION = 'os2forms_nemlogin_openid_connect.login_location';
+  private const SESSION_TOKEN = 'os2forms_nemlogin_openid_connect.user_token';
 
   /**
    * Identity provider URL.
@@ -83,10 +79,7 @@ class OpenIDConnect extends AuthProviderBase {
     $this->requestStack = $requestStack;
     $this->setLogger($logger);
 
-    $this->values = $this->session->get(self::SESSION_TOKEN);
-    if (!is_array($this->values)) {
-      $this->values = [];
-    }
+    $this->values = $this->getToken() ?? [];
   }
 
   /**
@@ -156,22 +149,19 @@ class OpenIDConnect extends AuthProviderBase {
   public function login() {
     $request = $this->requestStack->getCurrentRequest();
 
-    $token = $this->session->get(static::SESSION_TOKEN);
-    $this->session->remove(static::SESSION_TOKEN);
+    $token = $this->getToken();
     if (NULL === $token) {
-      // Tell authentication controller where to return to.
-      $this->session->set(static::SESSION_LOGIN_LOCATION, $request->getRequestUri());
-      $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate')->toString(TRUE)->getGeneratedUrl();
+      // Pass the current request uri on the the controller to tell it where to
+      // return to after authentication.
+      $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', [
+        OpenIDConnectController::QUERY_LOCATION_NAME => $request->getRequestUri(),
+      ])->toString();
 
-      return (new LocalRedirectResponse($url))->send();
+      return (new LocalRedirectResponse($url))
+        ->send();
     }
 
-    if (isset($token['error'])) {
-      $this->messenger()->addError($token['error']);
-    }
-    else {
-      $this->values = $token;
-    }
+    $this->values = $token;
 
     return (new TrustedRedirectResponse($this->getReturnUrl()))
       ->send();
@@ -181,11 +171,39 @@ class OpenIDConnect extends AuthProviderBase {
    * {@inheritdoc}
    */
   public function logout() {
-    $this->session->remove(self::SESSION_TOKEN);
-    $this->values = NULL;
+    $this->getToken(TRUE);
 
     return (new TrustedRedirectResponse($this->getReturnUrl()))
       ->send();
+  }
+
+  /**
+   * Set token.
+   *
+   * Used by authentication controller to set the result of the actual user
+   * authentication.
+   *
+   * @param array $token
+   *   The user token.
+   *
+   * @return $this
+   */
+  public function setToken(array $token): self {
+    $this->session->set(static::SESSION_TOKEN, $token);
+
+    return $this;
+  }
+
+  /**
+   * Get token.
+   */
+  private function getToken(bool $clear = FALSE): ?array {
+    $token = $this->session->get(static::SESSION_TOKEN);
+    if ($clear) {
+      $this->session->remove(static::SESSION_TOKEN);
+    }
+
+    return $token;
   }
 
   /**
