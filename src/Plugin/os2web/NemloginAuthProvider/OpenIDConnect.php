@@ -238,6 +238,8 @@ class OpenIDConnect extends AuthProviderBase {
     $form['nemlogin_openid_connect_discovery_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('OpenID Connect Discovery url'),
+      // Our urls are very long.
+      '#maxlength' => 256,
       '#required' => TRUE,
       '#default_value' => $this->configuration['nemlogin_openid_connect_discovery_url'] ?? NULL,
       '#description' => $this->t('OpenID Connect Discovery url (cf. <a href="https://swagger.io/docs/specification/authentication/openid-connect-discovery/">https://swagger.io/docs/specification/authentication/openid-connect-discovery/</a>)'),
