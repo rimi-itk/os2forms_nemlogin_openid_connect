@@ -102,7 +102,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('os2web_nemlogin.auth_provider'),
       $container->get('request_stack'),
       $container->get('session'),
-      $container->get('itkdev_openid_connect_drupal.cache_item_pool'),
+      $container->get('drupal_psr6_cache.cache_item_pool'),
       $container->get('logger.channel.os2forms_nemlogin_openid_connect')
     );
   }
