@@ -1,0 +1,5 @@
+services:
+  logger.channel.os2forms_nemlogin_openid_connect:
+    parent: logger.channel_base
+    arguments:
+      - 'os2forms_nemlogin_openid_connect'

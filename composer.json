@@ -1,0 +1,30 @@
+{
+    "name": "itk-dev/os2forms_nemlogin_openid_connect",
+    "type": "drupal-module",
+    "description": "os2forms_nemlogin_openid_connect",
+    "keywords": [
+    ],
+    "homepage": "https://www.drupal.org/project/os2forms_nemlogin_openid_connect",
+    "minimum-stability": "dev",
+    "dependencies": {
+        "itk-dev/openid-connect": "^2.1.0"
+    },
+    "require-dev": {
+        "drupal/coder": "^8.3",
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1"
+    },
+    "scripts": {
+        "coding-standards-check/phpcs": [
+            "vendor/bin/phpcs --standard=phpcs.xml.dist"
+        ],
+        "coding-standards-check": [
+            "@coding-standards-check/phpcs"
+        ],
+        "coding-standards-apply/phpcs": [
+            "vendor/bin/phpcbf --standard=phpcs.xml.dist"
+        ],
+        "coding-standards-apply": [
+            "@coding-standards-apply/phpcs"
+        ]
+    }
+}
