@@ -12,7 +12,7 @@ care of the actual NemLog-in authenticating.
 ## Installation
 
 ```sh
-composer require drupal/os2forms_nemlogin_openid_connect
+composer require itk-dev/os2forms_nemlogin_openid_connect
 vendor/bin/drush pm:enable os2forms_nemlogin_openid_connect
 ```
 

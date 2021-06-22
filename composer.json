@@ -1,5 +1,5 @@
 {
-    "name": "drupal/os2forms_nemlogin_openid_connect",
+    "name": "itk-dev/os2forms_nemlogin_openid_connect",
     "type": "drupal-module",
     "description": "os2forms_nemlogin_openid_connect",
     "keywords": [
