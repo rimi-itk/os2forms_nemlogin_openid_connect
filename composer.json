@@ -8,7 +8,7 @@
     "minimum-stability": "dev",
     "dependencies": {
         "itk-dev/openid-connect": "^2.1.0",
-        "itk-dev/drupal_psr6_cache": "dev-develop"
+        "itk-dev/drupal_psr6_cache": "^1.0"
     },
     "require-dev": {
         "drupal/coder": "^8.3",
