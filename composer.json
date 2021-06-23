@@ -6,7 +6,7 @@
     ],
     "homepage": "https://www.drupal.org/project/os2forms_nemlogin_openid_connect",
     "minimum-stability": "dev",
-    "dependencies": {
+    "require": {
         "itk-dev/openid-connect": "^2.1.0",
         "itk-dev/drupal_psr6_cache": "^1.0"
     },
