@@ -7,5 +7,6 @@ package: 'Custom'
 core_version_requirement: ^8
 
 dependencies:
+  - drupal:drupal_psr6_cache
   - drupal:os2forms
   - drupal:os2web_nemlogin
