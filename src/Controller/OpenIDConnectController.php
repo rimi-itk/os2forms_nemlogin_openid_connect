@@ -309,7 +309,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       'authenticate' => [
         '#type' => 'link',
         '#title' => $this->t('Try again'),
-        '#url' => $this->plugin->getLoginLocation(),
+        '#url' => $this->getLoginLocation(),
       ],
     ];
   }
