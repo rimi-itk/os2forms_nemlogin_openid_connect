@@ -3,6 +3,8 @@
 namespace Drupal\os2forms_nemlogin_openid_connect\Controller;
 
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
+use Drupal\Core\Language\LanguageInterface;
+use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -73,6 +75,13 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private $session;
 
   /**
+   * The language manager.
+   *
+   * @var \Drupal\Core\Language\LanguageManagerInterface
+   */
+  private $languageManager;
+
+  /**
    * The cache item pool.
    *
    * @var \Psr\Cache\CacheItemPoolInterface
@@ -82,7 +91,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   /**
    * Constructor.
    */
-  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LoggerInterface $logger) {
+  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger) {
     $this->plugin = $authProviderService->getActivePlugin();
     if (!$this->plugin instanceof OpenIDConnect) {
       throw new AuthenticationException(sprintf('Invalid plugin: %s; Expected %s', get_class($plugin), OpenIDConnect::class));
@@ -91,6 +100,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $this->requestStack = $requestStack;
     $this->session = $session;
     $this->cacheItemPool = $cacheItemPool;
+    $this->languageManager = $languageManager;
     $this->setLogger($logger);
   }
 
@@ -103,6 +113,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('request_stack'),
       $container->get('session'),
       $container->get('drupal_psr6_cache.cache_item_pool'),
+      $container->get('language_manager'),
       $container->get('logger.channel.os2forms_nemlogin_openid_connect')
     );
   }
@@ -147,7 +158,10 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       'redirectUri' => Url::fromRoute(
         'os2forms_nemlogin_openid_connect.openid_connect_authenticate',
         [],
-        ['absolute' => TRUE]
+        [
+          'absolute' => TRUE,
+          'language' => $this->languageManager->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE),
+        ]
       )->toString(TRUE)->getGeneratedUrl(),
       'openIDConnectMetadataUrl' => $pluginConfiguration['nemlogin_openid_connect_discovery_url'],
       'cacheItemPool' => $this->cacheItemPool,
