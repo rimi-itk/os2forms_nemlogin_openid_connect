@@ -39,3 +39,10 @@ function os2forms_nemlogin_openid_connect_form_alter(array &$form, FormStateInte
 function os2forms_nemlogin_openid_connect_webform_submission_prepare_form(WebformSubmissionInterface $webform_submission, string $operation, FormStateInterface $form_state) {
   Drupal::service(WebformHelper::class)->webformSubmissionPrepareForm($webform_submission, $operation, $form_state);
 }
+
+/**
+ * Implements hook_webform_third_party_settings_form_alter().
+ */
+function os2forms_nemlogin_openid_connect_webform_third_party_settings_form_alter(&$form, FormStateInterface $form_state) {
+  Drupal::service(WebformHelper::class)->webformThirdPartySettingsFormAlter($form, $form_state);
+}

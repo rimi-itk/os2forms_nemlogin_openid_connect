@@ -7,7 +7,9 @@ use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\os2web_nemlogin\Service\AuthProviderService;
 use Drupal\webform\Utility\WebformFormHelper;
+use Drupal\webform\WebformInterface;
 use Drupal\webform\WebformSubmissionInterface;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Webform helper.
@@ -102,7 +104,7 @@ class WebformHelper {
     FormStateInterface $formState): ?string {
 
     $webform = $webformSubmission->getWebform();
-    $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['authentication_settings'] ?? NULL;
+    $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
     if (!empty($settings['actual_key']) && !empty($settings['element_key'])) {
       $expectedKey = $settings['element_key'];
       $actualKey = $settings['actual_key'];
@@ -128,6 +130,91 @@ class WebformHelper {
 
     // All's good!
     return NULL;
+  }
+
+  /**
+   * Implements hook_webform_third_party_settings_form_alter().
+   */
+  public function webformThirdPartySettingsFormAlter(array &$form, FormStateInterface $form_state) {
+    /** @var \Drupal\webform\WebformInterface $webform */
+    $webform = $form_state->getFormObject()->getEntity();
+    $settings = $webform->getThirdPartySetting('os2forms', 'os2forms_nemid');
+
+    $options = $this->getActualKeyOptions();
+
+    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Actual key'),
+      '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] ?? NULL,
+      '#empty_option' => $this->t('Not specified'),
+      '#options' => $options,
+      '#description' => $this->t('@todo'),
+      '#states' => [
+        'required' => [
+          [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][element_key]"]' => ['!value' => '']],
+        ],
+      ],
+    ];
+
+    $options = $this->getElementKeyOptions($webform);
+
+    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['element_key'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Element key'),
+      '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['element_key'] ?? NULL,
+      '#empty_option' => $this->t('Not specified'),
+      '#options' => $options,
+      '#description' => $this->t('@todo'),
+      '#states' => [
+        'required' => [
+          [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][actual_key]"]' => ['!value' => '']],
+        ],
+      ],
+    ];
+  }
+
+  /**
+   * Get actual key options.
+   *
+   * @return array
+   *   The actual key options.
+   */
+  private function getActualKeyOptions(): array {
+    $plugin = $this->authProviderService->getActivePlugin();
+    $claims = $plugin->getConfiguration()['nemlogin_openid_connect_user_claims'] ?? '';
+
+    try {
+      $value = Yaml::parse($claims);
+      if (is_array($value)) {
+        sort($value);
+
+        return $value;
+      }
+    }
+    catch (\Exception $e) {
+    }
+
+    return [];
+  }
+
+  /**
+   * Get element key options.
+   *
+   * @param \Drupal\webform\WebformInterface $webform
+   *   The webform.
+   *
+   * @return array
+   *   The element key options.
+   */
+  private function getElementKeyOptions(WebformInterface $webform): array {
+    $elements = $webform->getElementsDecoded();
+    $textElements = array_filter($elements, static function (array $element) {
+      return in_array($element['#type'], ['textfield', 'hidden']);
+    });
+
+    return array_map(static function (array $element) {
+      return $element['#title'];
+    }, $textElements);
   }
 
 }
