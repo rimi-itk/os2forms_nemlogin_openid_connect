@@ -218,7 +218,7 @@ class WebformHelper {
    *   The element key options.
    */
   private function getElementKeyOptions(WebformInterface $webform): array {
-    $elements = $webform->getElementsDecoded();
+    $elements = $webform->getElementsDecodedAndFlattened();
     $textElements = array_filter($elements, static function (array $element) {
       return in_array($element['#type'], ['textfield', 'hidden']);
     });
