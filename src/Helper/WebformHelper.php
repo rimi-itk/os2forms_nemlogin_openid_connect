@@ -82,9 +82,13 @@ class WebformHelper {
       $error = $this->checkAccess($webformSubmission, $operation, $formState);
 
       if (NULL !== $error) {
+        $webform = $webformSubmission->getWebform();
+        $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
+        $message = $settings['error_message'] ?? $error;
+
         $formState->setTemporaryValue(static::TEMPORARY_KEY, [
           'access' => FALSE,
-          'message' => $error,
+          'message' => $message,
         ]);
       }
     }
@@ -144,11 +148,11 @@ class WebformHelper {
 
     $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] = [
       '#type' => 'select',
-      '#title' => $this->t('Actual key'),
+      '#title' => $this->t('User data'),
       '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] ?? NULL,
       '#empty_option' => $this->t('Not specified'),
       '#options' => $options,
-      '#description' => $this->t('@todo'),
+      '#description' => $this->t('User data field whose value must match the value of the selected form element'),
       '#states' => [
         'required' => [
           [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][element_key]"]' => ['!value' => '']],
@@ -160,18 +164,25 @@ class WebformHelper {
 
     $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['element_key'] = [
       '#type' => 'select',
-      '#title' => $this->t('Element key'),
+      '#title' => $this->t('Form element'),
       '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['element_key'] ?? NULL,
       '#empty_option' => $this->t('Not specified'),
       '#options' => $options,
-      '#description' => $this->t('@todo'),
+      '#description' => $this->t('Form element whose value must match the value of the User data field'),
       '#states' => [
         'required' => [
           [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][actual_key]"]' => ['!value' => '']],
         ],
       ],
     ];
-  }
+
+    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['error_message'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Error message'),
+      '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['error_message'] ?? NULL,
+      '#description' => $this->t('Message to show to user if access is denied. If not set, a generic message will be shown.'),
+    ];
+}
 
   /**
    * Get actual key options.
