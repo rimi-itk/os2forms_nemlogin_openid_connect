@@ -84,7 +84,7 @@ class WebformHelper {
       if (NULL !== $error) {
         $webform = $webformSubmission->getWebform();
         $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
-        $message = $settings['error_message'] ?? $error;
+        $message = !empty($settings['error_message']) ? $settings['error_message'] : $error;
 
         $formState->setTemporaryValue(static::TEMPORARY_KEY, [
           'access' => FALSE,
@@ -103,32 +103,27 @@ class WebformHelper {
    * @return string|null
    *   Access denied message if any or null.
    */
-  private function checkAccess(WebformSubmissionInterface $webformSubmission,
-    string $operation,
-    FormStateInterface $formState): ?string {
-
+  private function checkAccess(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): ?string {
     $webform = $webformSubmission->getWebform();
     $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
-    if (!empty($settings['actual_key']) && !empty($settings['element_key'])) {
-      $expectedKey = $settings['element_key'];
-      $actualKey = $settings['actual_key'];
+    if (!empty($settings['user_claim']) && !empty($settings['element_key'])) {
+      $elementKey = $settings['element_key'];
+      $userClaim = $settings['user_claim'];
 
-      // @todo check for admin users.
-      if (isset($expectedKey, $actualKey)) {
-        $expected = $webformSubmission->getData()[$expectedKey] ?? NULL;
-        if (empty($expected)) {
-          return $this->t('Expected value not defined');
-        }
+      // @todo How to handle admin users?
+      $plugin = $this->authProviderService->getActivePlugin();
+      if (!$plugin->isAuthenticated()) {
+        return $this->t('Not authenticated');
+      }
 
-        $plugin = $this->authProviderService->getActivePlugin();
-        if (!$plugin->isAuthenticated()) {
-          return $this->t('Not authenticated');
-        }
+      $expected = $webformSubmission->getData()[$elementKey] ?? NULL;
+      if (empty($expected)) {
+        return $this->t('Expected value not defined');
+      }
 
-        $actual = $plugin->fetchValue($actualKey);
-        if ((string) $actual !== (string) $expected) {
-          return $this->t('Actual value does not match expected value');
-        }
+      $actual = $plugin->fetchValue($userClaim);
+      if ((string) $actual !== (string) $expected) {
+        return $this->t('Actual value does not match expected value');
       }
     }
 
@@ -144,12 +139,22 @@ class WebformHelper {
     $webform = $form_state->getFormObject()->getEntity();
     $settings = $webform->getThirdPartySetting('os2forms', 'os2forms_nemid');
 
-    $options = $this->getActualKeyOptions();
+    $options = $this->getUserClaimOptions();
 
-    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] = [
+    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] = [
+      '#type' => 'fieldset',
+      '#title' => $this->t('Authentication settings'),
+      '#states' => [
+        'visible' => [
+          [':input[name="third_party_settings[os2forms][os2forms_nemid][webform_type]"]' => ['!value' => '']],
+        ],
+      ],
+    ];
+
+    $form['third_party_settings']['os2forms']['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings']['user_claim'] = [
       '#type' => 'select',
-      '#title' => $this->t('User data'),
-      '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['actual_key'] ?? NULL,
+      '#title' => $this->t('User claim'),
+      '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['user_claim'] ?? NULL,
       '#empty_option' => $this->t('Not specified'),
       '#options' => $options,
       '#description' => $this->t('User data field whose value must match the value of the selected form element'),
@@ -171,7 +176,7 @@ class WebformHelper {
       '#description' => $this->t('Form element whose value must match the value of the User data field'),
       '#states' => [
         'required' => [
-          [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][actual_key]"]' => ['!value' => '']],
+          [':input[name="third_party_settings[os2forms][os2forms_nemid][os2forms_nemlogin_openid_connect][authentication_settings][user_claim]"]' => ['!value' => '']],
         ],
       ],
     ];
@@ -182,22 +187,22 @@ class WebformHelper {
       '#default_value' => $settings['os2forms_nemlogin_openid_connect']['authentication_settings']['error_message'] ?? NULL,
       '#description' => $this->t('Message to show to user if access is denied. If not set, a generic message will be shown.'),
     ];
-}
+  }
 
   /**
-   * Get actual key options.
+   * Get user claim options.
    *
    * @return array
-   *   The actual key options.
+   *   The user claim options.
    */
-  private function getActualKeyOptions(): array {
+  private function getUserClaimOptions(): array {
     $plugin = $this->authProviderService->getActivePlugin();
     $claims = $plugin->getConfiguration()['nemlogin_openid_connect_user_claims'] ?? '';
 
     try {
       $value = Yaml::parse($claims);
       if (is_array($value)) {
-        sort($value);
+        asort($value);
 
         return $value;
       }
