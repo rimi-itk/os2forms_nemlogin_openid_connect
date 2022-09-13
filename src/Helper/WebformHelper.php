@@ -105,7 +105,8 @@ class WebformHelper {
    */
   private function checkAccess(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): ?string {
     $webform = $webformSubmission->getWebform();
-    $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
+    $settings = $webform->getThirdPartySettings('os2forms')['os2forms_ne Form elementmid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
+    // Both User claim and Form element must be set to check access.
     if (!empty($settings['user_claim']) && !empty($settings['element_key'])) {
       $elementKey = $settings['element_key'];
       $userClaim = $settings['user_claim'];
@@ -215,6 +216,9 @@ class WebformHelper {
 
   /**
    * Get element key options.
+   *
+   * Only simple text elements, i.e. text fields and hidden fields, are
+   * returned.
    *
    * @param \Drupal\webform\WebformInterface $webform
    *   The webform.
