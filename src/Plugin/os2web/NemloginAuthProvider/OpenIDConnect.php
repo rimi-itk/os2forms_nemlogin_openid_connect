@@ -17,6 +17,8 @@ use Psr\Log\LoggerTrait;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
+use Symfony\Component\Yaml\Exception\ParseException;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Defines a plugin for Nemlogin auth via OpenID Connect.
@@ -228,6 +230,7 @@ class OpenIDConnect extends AuthProviderBase {
       'nemlogin_openid_connect_client_id' => '',
       'nemlogin_openid_connect_client_secret' => '',
       'nemlogin_openid_connect_fetch_once' => '',
+      'nemlogin_openid_connect_user_claims' => '',
     ];
   }
 
@@ -263,6 +266,13 @@ class OpenIDConnect extends AuthProviderBase {
       '#description' => $this->t('User will be logged out immediately after login. User data will be removed from session after first retrieving'),
     ];
 
+    $form['nemlogin_openid_connect_user_claims'] = [
+      '#type' => 'textarea',
+      '#title' => $this->t('User claims'),
+      '#description' => $this->t('Describe user claims for use when comparing user values.<br/>Each line must be on the form <code>«claim»: «display name»</code>, e.g.<br/><br/><code>cpr: CPR-nummer<br/>email: E-mailadresse</code>'),
+      '#default_value' => $this->configuration['nemlogin_openid_connect_user_claims'] ?? NULL,
+    ];
+
     return $form;
   }
 
@@ -275,6 +285,36 @@ class OpenIDConnect extends AuthProviderBase {
     if (!UrlHelper::isValid($url, TRUE)) {
       $form_state->setErrorByName('nemlogin_openid_connect_discovery_url', $this->t('Url is not valid'));
     }
+
+    $claims = $form_state->getValue('nemlogin_openid_connect_user_claims');
+    try {
+      $value = Yaml::parse($claims);
+      foreach ($value as $name => $value) {
+        if (!is_string($name)) {
+          $form_state->setErrorByName(
+            'nemlogin_openid_connect_user_claims',
+            $this->t('Name (@name) must be a string; found @type.', [
+              '@name' => $name,
+              '@type' => gettype($name),
+            ])
+          );
+          break;
+        }
+        if (!is_string($value)) {
+          $form_state->setErrorByName(
+            'nemlogin_openid_connect_user_claims',
+            $this->t('Value for “@name” must be a string; found @type.', [
+              '@name' => $name,
+              '@type' => gettype($value),
+            ])
+          );
+          break;
+        }
+      }
+    }
+    catch (ParseException $exception) {
+      $form_state->setErrorByName('nemlogin_openid_connect_user_claims', $this->t('Invalid claims (@message)', ['@message' => $exception->getMessage()]));
+    }
   }
 
   /**
@@ -286,6 +326,8 @@ class OpenIDConnect extends AuthProviderBase {
     $configuration['nemlogin_openid_connect_discovery_url'] = $form_state->getValue('nemlogin_openid_connect_discovery_url');
     $configuration['nemlogin_openid_connect_client_id'] = $form_state->getValue('nemlogin_openid_connect_client_id');
     $configuration['nemlogin_openid_connect_client_secret'] = $form_state->getValue('nemlogin_openid_connect_client_secret');
+    $configuration['nemlogin_openid_connect_fetch_once'] = $form_state->getValue('nemlogin_openid_connect_fetch_once');
+    $configuration['nemlogin_openid_connect_user_claims'] = $form_state->getValue('nemlogin_openid_connect_user_claims');
 
     $this->setConfiguration($configuration);
   }

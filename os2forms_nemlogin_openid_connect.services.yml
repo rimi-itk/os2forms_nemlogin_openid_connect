@@ -3,3 +3,8 @@ services:
     parent: logger.channel_base
     arguments:
       - 'os2forms_nemlogin_openid_connect'
+
+  Drupal\os2forms_nemlogin_openid_connect\Helper\WebformHelper:
+    arguments:
+      - '@os2web_nemlogin.auth_provider'
+      - '@messenger'
