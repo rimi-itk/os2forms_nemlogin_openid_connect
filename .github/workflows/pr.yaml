@@ -1,0 +1,177 @@
+on: pull_request
+name: PR Review
+jobs:
+  test-composer-files:
+    name: Validate composer
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ '7.4', '8.0', '8.1' ]
+        dependency-version: [ prefer-lowest, prefer-stable ]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: json
+          coverage: none
+          tools: composer:v2
+      # https://github.com/shivammathur/setup-php#cache-composer-dependencies
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: Validate composer files
+        run: |
+          composer validate --strict composer.json
+          # Check that dependencies resolve.
+          composer update --${{ matrix.dependency-version }} --prefer-dist --no-interaction
+
+  php-coding-standards:
+    name: PHP coding standards
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ '7.4', '8.0', '8.1' ]
+        dependency-version: [ prefer-lowest, prefer-stable ]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: json
+          coverage: none
+          tools: composer:v2
+      # https://github.com/shivammathur/setup-php#cache-composer-dependencies
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: Install Dependencies
+        run: |
+          composer install --no-interaction --no-progress
+      - name: PHPCS
+        run: |
+          composer coding-standards-check/phpcs
+
+  twig-coding-standards:
+    name: Twig coding standards
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ '7.4', '8.0', '8.1' ]
+        dependency-version: [ prefer-lowest, prefer-stable ]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: json
+          coverage: none
+          tools: composer:v2
+      # https://github.com/shivammathur/setup-php#cache-composer-dependencies
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: Install Dependencies
+        run: |
+          composer install --no-interaction --no-progress
+      - name: twigcs
+        run: |
+          composer coding-standards-check/twigcs
+
+  php-code-analysis:
+    name: PHP code analysis
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php-versions: [ '7.4', '8.0', '8.1' ]
+        dependency-version: [ prefer-lowest, prefer-stable ]
+    steps:
+      - uses: actions/checkout@master
+      - name: Setup PHP, with composer and extensions
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-versions }}
+          extensions: json, gd
+          coverage: none
+          tools: composer:v2
+      # https://github.com/shivammathur/setup-php#cache-composer-dependencies
+      - name: Get composer cache directory
+        id: composer-cache
+        run: echo "::set-output name=dir::$(composer config cache-files-dir)"
+      - name: Cache dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+      - name: drupal-check
+        run: |
+          # We need a Drupal project to run drupal-check (cf. https://github.com/mglaman/drupal-check#usage)
+          # Install Drupal
+          composer --no-interaction create-project drupal/recommended-project:^9 --stability=dev drupal
+          # Copy our module source code into the Drupal module folder.
+          mkdir -p drupal/web/modules/contrib/os2forms_nemlogin_openid_connect
+          cp -r os2forms_nemlogin_openid_connect.* composer.json src drupal/web/modules/contrib/os2forms_nemlogin_openid_connect
+          # Add our module as a composer repository.
+          composer --no-interaction --working-dir=drupal config repositories.itk-dev/os2forms_nemlogin_openid_connect path web/modules/contrib/os2forms_nemlogin_openid_connect
+          # Restore Drupal composer repository.
+          composer --no-interaction --working-dir=drupal config repositories.drupal composer https://packages.drupal.org/8
+
+          # Require our module.
+          composer --no-interaction --working-dir=drupal require 'itk-dev/os2forms_nemlogin_openid_connect:*'
+
+          # Check code
+          composer --no-interaction --working-dir=drupal require --dev drupal/core-dev
+          cd drupal/web/modules/contrib/os2forms_nemlogin_openid_connect
+          # Remove our non-dev dependencies to prevent duplicated Drupal installation
+          # PHP Fatal error:  Cannot redeclare drupal_get_filename() (previously declared in /home/runner/work/os2forms_nemlogin_openid_connect/os2forms_nemlogin_openid_connect/drupal/web/modules/contrib/os2forms_nemlogin_openid_connect/vendor/drupal/core/includes/bootstrap.inc:190) in /home/runner/work/os2forms_nemlogin_openid_connect/os2forms_nemlogin_openid_connect/drupal/web/core/includes/bootstrap.inc on line 190
+          # Use sed to remove the "require" property in composer.json
+          sed -i '/^\s*"require":/,/^\s*}/d' composer.json
+          composer --no-interaction install
+          composer code-analysis
+
+  markdown-coding-standards:
+    runs-on: ubuntu-20.04
+    name: Markdown coding standards
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Get yarn cache directory path
+        id: yarn-cache-dir-path
+        run: echo "::set-output name=dir::$(yarn cache dir)"
+      - name: Cache yarn packages
+        uses: actions/cache@v2
+        id: yarn-cache
+        with:
+          path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Yarn install
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16'
+      - run: yarn install
+      - name: coding-standards-check
+        run: yarn coding-standards-check
