@@ -46,3 +46,17 @@ function os2forms_nemlogin_openid_connect_webform_submission_prepare_form(Webfor
 function os2forms_nemlogin_openid_connect_webform_third_party_settings_form_alter(&$form, FormStateInterface $form_state) {
   Drupal::service(WebformHelper::class)->webformThirdPartySettingsFormAlter($form, $form_state);
 }
+
+/**
+ * Implements hook_theme().
+ */
+function os2forms_nemlogin_openid_connect_theme($existing, $type, $theme, $path) {
+  return [
+    'os2forms_nemlogin_openid_connect_local_test_users' => [
+      'variables' => [
+        'users' => NULL,
+        'query' => NULL,
+      ],
+    ],
+  ];
+}

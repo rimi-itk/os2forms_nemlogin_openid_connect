@@ -2,9 +2,11 @@
 
 namespace Drupal\os2forms_nemlogin_openid_connect\Controller;
 
+use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
+use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
@@ -89,9 +91,23 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private $cacheItemPool;
 
   /**
+   * The config.
+   *
+   * @var \Drupal\Core\Config\ImmutableConfig
+   */
+  private $config;
+
+  /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  private $renderer;
+
+  /**
    * Constructor.
    */
-  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger) {
+  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, ConfigFactoryInterface $configFactory, RendererInterface $renderer) {
     $this->plugin = $authProviderService->getActivePlugin();
     if (!$this->plugin instanceof OpenIDConnect) {
       throw new AuthenticationException(sprintf('Invalid plugin: %s; Expected %s', get_class($plugin), OpenIDConnect::class));
@@ -102,6 +118,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $this->cacheItemPool = $cacheItemPool;
     $this->languageManager = $languageManager;
     $this->setLogger($logger);
+    $this->config = $configFactory->get('os2forms_nemlogin_openid_connect');
+    $this->renderer = $renderer;
   }
 
   /**
@@ -114,7 +132,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('session'),
       $container->get('drupal_psr6_cache.cache_item_pool'),
       $container->get('language_manager'),
-      $container->get('logger.channel.os2forms_nemlogin_openid_connect')
+      $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
+      $container->get('config.factory'),
+      $container->get('renderer'),
     );
   }
 
@@ -167,6 +187,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       'cacheItemPool' => $this->cacheItemPool,
       'clientId' => $pluginConfiguration['nemlogin_openid_connect_client_id'],
       'clientSecret' => $pluginConfiguration['nemlogin_openid_connect_client_secret'],
+      'localTestMode' => FALSE,
     ];
 
     return new OpenIdConfigurationProvider($providerOptions);
@@ -230,14 +251,24 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $this->setSessionValue(static::SESSION_STATE, $state);
     $this->setSessionValue(static::SESSION_NONCE, $nonce);
 
-    $authorizationUrl = $provider->getAuthorizationUrl([
+    $options = [
       'state' => $state,
       'nonce' => $nonce,
-    ]);
+    ];
+    $authorizationUrl = $this->isLocalTestMode()
+      ? Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', $options + ['test' => TRUE])->toString(TRUE)->getGeneratedUrl()
+      : $provider->getAuthorizationUrl($options);
 
     $this->setSessionValue(self::SESSION_STATE, $provider->getState());
 
     return new TrustedRedirectResponse($authorizationUrl);
+  }
+
+  /**
+   *
+   */
+  private function isLocalTestMode() {
+    return (bool) ($this->plugin->getConfiguration()['nemlogin_openid_connect_local_test_mode'] ?? FALSE);
   }
 
   /**
@@ -251,20 +282,38 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function process(): Response {
     $request = $this->requestStack->getCurrentRequest();
 
-    if (!$request->query->has('state') || !$request->query->has('id_token')) {
-      $this->error('Missing state or id_token in response', ['query' => $request->query->all()]);
-      throw new BadRequestHttpException('Missing state or id_token in response');
+    if ($this->isLocalTestMode() && (bool) $request->get('test')) {
+      $users = $this->config->get('nemlogin_openid_connect_local_test_users');
+      $userId = $request->get('user');
+      if (isset($users[$userId])) {
+        $token = $users[$userId] + ['local_test' => TRUE];
+      }
+      else {
+        $renderable = [
+          '#theme' => 'os2forms_nemlogin_openid_connect_local_test_users',
+          '#users' => $users,
+          '#query' => $request->query->all(),
+        ];
+
+        return new Response($this->renderer->renderPlain($renderable));
+      }
     }
+    else {
+      if (!$request->query->has('state') || !$request->query->has('id_token')) {
+        $this->error('Missing state or id_token in response', ['query' => $request->query->all()]);
+        throw new BadRequestHttpException('Missing state or id_token in response');
+      }
 
-    $state = $this->getSessionValue(self::SESSION_STATE);
-    if ($state !== $request->query->get('state')) {
-      $this->error('Invalid state', ['state' => $request->query->get('state')]);
-      throw new BadRequestHttpException('Invalid state');
+      $state = $this->getSessionValue(self::SESSION_STATE);
+      if ($state !== $request->query->get('state')) {
+        $this->error('Invalid state', ['state' => $request->query->get('state')]);
+        throw new BadRequestHttpException('Invalid state');
+      }
+
+      $provider = $this->getOpenIdConfigurationProvider();
+
+      $token = (array) $provider->validateIdToken($request->query->get('id_token'), $this->getSessionValue(static::SESSION_NONCE));
     }
-
-    $provider = $this->getOpenIdConfigurationProvider();
-
-    $token = (array) $provider->validateIdToken($request->query->get('id_token'), $this->getSessionValue(static::SESSION_NONCE));
 
     // Store the token for use by the authentication plugin.
     $this->plugin->setToken($token);
