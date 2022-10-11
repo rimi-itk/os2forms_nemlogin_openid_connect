@@ -43,9 +43,11 @@ class WebformHelper {
 
   /**
    * Implements hook_form_alter().
+   *
+   * @phpstan-param array<string, mixed> $form
    */
-  public function formAlter(array &$form, FormStateInterface $formState, $formId) {
-    $data = $formState->getTemporaryValue(static::TEMPORARY_KEY);
+  public function formAlter(array &$form, FormStateInterface $formState, string $formId): void {
+    $data = $formState->getTemporaryValue(self::TEMPORARY_KEY);
     if (FALSE === ($data['access'] ?? TRUE)) {
       // Flattening the elements makes it much easier to access nested elements.
       $elements = &WebformFormHelper::flattenElements($form['elements']);
@@ -73,11 +75,7 @@ class WebformHelper {
   /**
    * Implements hook_ENTITY_TYPE_prepare_form().
    */
-  public function webformSubmissionPrepareForm(
-    WebformSubmissionInterface $webformSubmission,
-    string $operation,
-    FormStateInterface $formState
-  ) {
+  public function webformSubmissionPrepareForm(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): void {
     try {
       $error = $this->checkAccess($webformSubmission, $operation, $formState);
 
@@ -86,7 +84,7 @@ class WebformHelper {
         $settings = $webform->getThirdPartySettings('os2forms')['os2forms_nemid']['os2forms_nemlogin_openid_connect']['authentication_settings'] ?? NULL;
         $message = !empty($settings['error_message']) ? $settings['error_message'] : $error;
 
-        $formState->setTemporaryValue(static::TEMPORARY_KEY, [
+        $formState->setTemporaryValue(self::TEMPORARY_KEY, [
           'access' => FALSE,
           'message' => $message,
         ]);
@@ -114,17 +112,17 @@ class WebformHelper {
       // @todo How to handle admin users?
       $plugin = $this->authProviderService->getActivePlugin();
       if (!$plugin->isAuthenticated()) {
-        return $this->t('Not authenticated');
+        return (string) $this->t('Not authenticated');
       }
 
       $expected = $webformSubmission->getData()[$elementKey] ?? NULL;
       if (empty($expected)) {
-        return $this->t('Expected value not defined');
+        return (string) $this->t('Expected value not defined');
       }
 
       $actual = $plugin->fetchValue($userClaim);
       if ((string) $actual !== (string) $expected) {
-        return $this->t('Actual value does not match expected value');
+        return (string) $this->t('Actual value does not match expected value');
       }
     }
 
@@ -134,10 +132,14 @@ class WebformHelper {
 
   /**
    * Implements hook_webform_third_party_settings_form_alter().
+   *
+   * @phpstan-param array<string, mixed> $form
    */
-  public function webformThirdPartySettingsFormAlter(array &$form, FormStateInterface $form_state) {
+  public function webformThirdPartySettingsFormAlter(array &$form, FormStateInterface $form_state): void {
+    /** @var \Drupal\Core\Entity\EntityFormInterface $formObject */
+    $formObject = $form_state->getFormObject();
     /** @var \Drupal\webform\WebformInterface $webform */
-    $webform = $form_state->getFormObject()->getEntity();
+    $webform = $formObject->getEntity();
     $settings = $webform->getThirdPartySetting('os2forms', 'os2forms_nemid');
 
     $options = $this->getUserClaimOptions();
@@ -195,6 +197,8 @@ class WebformHelper {
    *
    * @return array
    *   The user claim options.
+   *
+   * @phpstan-return array<string, mixed>
    */
   private function getUserClaimOptions(): array {
     $plugin = $this->authProviderService->getActivePlugin();
@@ -225,6 +229,8 @@ class WebformHelper {
    *
    * @return array
    *   The element key options.
+   *
+   * @phpstan-return array<string, mixed>
    */
   private function getElementKeyOptions(WebformInterface $webform): array {
     $elements = $webform->getElementsDecodedAndFlattened();

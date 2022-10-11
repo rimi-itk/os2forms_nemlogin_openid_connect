@@ -10,7 +10,6 @@ use Drupal\Core\Url;
 use Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController;
 use Drupal\os2web_nemlogin\Form\AuthProviderBaseSettingsForm;
 use Drupal\os2web_nemlogin\Plugin\AuthProviderBase;
-use ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\LoggerTrait;
@@ -38,25 +37,11 @@ class OpenIDConnect extends AuthProviderBase {
   private const SESSION_TOKEN = 'os2forms_nemlogin_openid_connect.user_token';
 
   /**
-   * Identity provider URL.
-   *
-   * @var string
-   */
-  private $idpUrl;
-
-  /**
    * Fetch only mode flag.
    *
    * @var bool
    */
-  private $fetchOnce;
-
-  /**
-   * The OpenID configuration provider.
-   *
-   * @var \ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider
-   */
-  private $openIDConfigurationProvider;
+  private $fetchOnce = FALSE;
 
   /**
    * The request stack.
@@ -74,6 +59,8 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $configuration
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition, RequestStack $requestStack, SessionInterface $session, LoggerInterface $logger) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -86,13 +73,15 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $configuration
    */
   public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
     // Shamelessly lifted from Drupal\os2web_nemlogin\Plugin\AuthProviderBase.
     // Swapping config with a values from config object.
     $configObject = $container->get('config.factory')->get(AuthProviderBaseSettingsForm::$configName);
     if ($configurationSerialized = $configObject->get($plugin_id)) {
-      $configuration = unserialize($configurationSerialized);
+      $configuration = unserialize($configurationSerialized, ['allowed_classes' => FALSE]);
     }
     return new static(
       $configuration,
@@ -108,7 +97,7 @@ class OpenIDConnect extends AuthProviderBase {
    * {@inheritdoc}
    */
   public function isInitialized() {
-    return $this->openIDConfigurationProvider instanceof OpenIdConfigurationProvider;
+    return FALSE;
   }
 
   /**
@@ -147,6 +136,9 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The response.
    */
   public function login() {
     $request = $this->requestStack->getCurrentRequest();
@@ -171,6 +163,9 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The response.
    */
   public function logout() {
     $this->getToken(TRUE);
@@ -189,20 +184,24 @@ class OpenIDConnect extends AuthProviderBase {
    *   The user token.
    *
    * @return $this
+   *
+   * @phpstan-param array<string, mixed> $token
    */
   public function setToken(array $token): self {
-    $this->session->set(static::SESSION_TOKEN, $token);
+    $this->session->set(self::SESSION_TOKEN, $token);
 
     return $this;
   }
 
   /**
    * Get token.
+   *
+   * @phpstan-return array<string, mixed>|null
    */
   private function getToken(bool $clear = FALSE): ?array {
-    $token = $this->session->get(static::SESSION_TOKEN);
+    $token = $this->session->get(self::SESSION_TOKEN);
     if ($clear) {
-      $this->session->remove(static::SESSION_TOKEN);
+      $this->session->remove(self::SESSION_TOKEN);
     }
 
     return $token;
@@ -223,6 +222,11 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @return array
+   *   The default configuration.
+   *
+   * @phpstan-return array<string, mixed>
    */
   public function defaultConfiguration() {
     return parent::defaultConfiguration() + [
@@ -231,13 +235,17 @@ class OpenIDConnect extends AuthProviderBase {
       'nemlogin_openid_connect_client_secret' => '',
       'nemlogin_openid_connect_fetch_once' => '',
       'nemlogin_openid_connect_user_claims' => '',
+      'nemlogin_openid_connect_local_test_mode' => FALSE,
     ];
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
+   * @phpstan-return array<string, mixed>
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
     $form['nemlogin_openid_connect_discovery_url'] = [
       '#type' => 'textfield',
       '#title' => $this->t('OpenID Connect Discovery url'),
@@ -273,13 +281,22 @@ class OpenIDConnect extends AuthProviderBase {
       '#default_value' => $this->configuration['nemlogin_openid_connect_user_claims'] ?? NULL,
     ];
 
+    $form['nemlogin_openid_connect_local_test_mode'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Local test mode'),
+      '#description' => $this->t("If checked, we fake authentication using data defined in <code>\$config['os2forms_nemlogin_openid_connect']['nemlogin_openid_connect_local_test_users']</code> in <code>settings.local.php</code>."),
+      '#default_value' => $this->configuration['nemlogin_openid_connect_local_test_mode'] ?? NULL,
+    ];
+
     return $form;
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
     $url = $form_state->getValue('nemlogin_openid_connect_discovery_url');
 
     if (!UrlHelper::isValid($url, TRUE)) {
@@ -319,8 +336,10 @@ class OpenIDConnect extends AuthProviderBase {
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param array<string, mixed> $form
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     $configuration = $this->getConfiguration();
 
     $configuration['nemlogin_openid_connect_discovery_url'] = $form_state->getValue('nemlogin_openid_connect_discovery_url');
@@ -328,14 +347,19 @@ class OpenIDConnect extends AuthProviderBase {
     $configuration['nemlogin_openid_connect_client_secret'] = $form_state->getValue('nemlogin_openid_connect_client_secret');
     $configuration['nemlogin_openid_connect_fetch_once'] = $form_state->getValue('nemlogin_openid_connect_fetch_once');
     $configuration['nemlogin_openid_connect_user_claims'] = $form_state->getValue('nemlogin_openid_connect_user_claims');
+    $configuration['nemlogin_openid_connect_local_test_mode'] = $form_state->getValue('nemlogin_openid_connect_local_test_mode');
 
     $this->setConfiguration($configuration);
   }
 
   /**
    * {@inheritdoc}
+   *
+   * @phpstan-param mixed $level
+   * @phpstan-param string $message
+   * @phpstan-param array<string, mixed> $context
    */
-  public function log($level, $message, array $context = []) {
+  public function log($level, $message, array $context = []): void {
     if (NULL !== $this->logger) {
       $this->logger->log($level, $message, $context);
     }

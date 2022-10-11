@@ -1,31 +1,51 @@
 {
     "name": "itk-dev/os2forms_nemlogin_openid_connect",
     "type": "drupal-module",
+    "license": "MIT",
     "description": "os2forms_nemlogin_openid_connect",
-    "keywords": [
-    ],
+    "keywords": [],
     "homepage": "https://www.drupal.org/project/os2forms_nemlogin_openid_connect",
     "minimum-stability": "dev",
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://packages.drupal.org/8"
+        }
+    ],
     "require": {
         "itk-dev/openid-connect": "^2.1.0",
-        "itk-dev/drupal_psr6_cache": "^1.0"
+        "itk-dev/drupal_psr6_cache": "^1.0",
+        "os2web/os2web_nemlogin": "^1.2",
+        "drupal/webform": "^6.0"
     },
     "require-dev": {
         "drupal/coder": "^8.3",
-        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1"
+        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
+        "mglaman/drupal-check": "^1.4",
+        "friendsoftwig/twigcs": "^6.0"
     },
     "scripts": {
+        "code-analysis/drupal-check": [
+            "drupal-check --deprecations --analysis --exclude-dir=vendor *.* src"
+        ],
+        "code-analysis": [
+            "@code-analysis/drupal-check"
+        ],
         "coding-standards-check/phpcs": [
-            "vendor/bin/phpcs --standard=phpcs.xml.dist"
+            "phpcs --standard=phpcs.xml.dist"
+        ],
+        "coding-standards-check/twigcs": [
+            "twigcs templates"
         ],
         "coding-standards-check": [
-            "@coding-standards-check/phpcs"
+            "@coding-standards-check/phpcs",
+            "@coding-standards-check/twigcs"
         ],
-        "coding-standards-apply/phpcs": [
-            "vendor/bin/phpcbf --standard=phpcs.xml.dist"
+        "coding-standards-apply/phpcbf": [
+            "phpcbf --standard=phpcs.xml.dist"
         ],
         "coding-standards-apply": [
-            "@coding-standards-apply/phpcs"
+            "@coding-standards-apply/phpcbf"
         ]
     },
     "config": {
