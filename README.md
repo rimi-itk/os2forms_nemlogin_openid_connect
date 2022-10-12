@@ -40,8 +40,12 @@ performed with local users defined in
 in `settings.local.php`, e.g.
 
 ```php
-// User id => user info (claims).
-$config['os2forms_nemlogin_openid_connect']['nemlogin_openid_connect_local_test_users'] = [
+// Enable local test mode
+$settings['os2forms_nemlogin_openid_connect']['local_test_mode] = TRUE:
+
+// Define local test users
+//   User id => user info (claims)
+$settings['os2forms_nemlogin_openid_connect']['local_test_users'] = [
   '1234567890' => [
     'cpr' => '1234567890',
     'name' => 'John Doe',

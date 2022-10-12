@@ -2,13 +2,13 @@
 
 namespace Drupal\os2forms_nemlogin_openid_connect\Controller;
 
-use Drupal\Core\Config\ConfigFactoryInterface;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Render\RendererInterface;
 use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
+use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\os2forms_nemlogin_openid_connect\Exception\AuthenticationException;
@@ -91,13 +91,6 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private $cacheItemPool;
 
   /**
-   * The config.
-   *
-   * @var \Drupal\Core\Config\ImmutableConfig
-   */
-  private $config;
-
-  /**
    * The renderer.
    *
    * @var \Drupal\Core\Render\RendererInterface
@@ -107,7 +100,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   /**
    * Constructor.
    */
-  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, ConfigFactoryInterface $configFactory, RendererInterface $renderer) {
+  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, RendererInterface $renderer) {
     $plugin = $authProviderService->getActivePlugin();
     if (!$plugin instanceof OpenIDConnect) {
       throw new AuthenticationException(sprintf('Invalid plugin: %s; Expected %s', get_class($plugin), OpenIDConnect::class));
@@ -119,7 +112,6 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $this->cacheItemPool = $cacheItemPool;
     $this->languageManager = $languageManager;
     $this->setLogger($logger);
-    $this->config = $configFactory->get('os2forms_nemlogin_openid_connect');
     $this->renderer = $renderer;
   }
 
@@ -134,7 +126,6 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('drupal_psr6_cache.cache_item_pool'),
       $container->get('language_manager'),
       $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
-      $container->get('config.factory'),
       $container->get('renderer'),
     );
   }
@@ -281,7 +272,27 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    * Is local test mode?
    */
   private function isLocalTestMode(): bool {
-    return (bool) ($this->plugin->getConfiguration()['nemlogin_openid_connect_local_test_mode'] ?? FALSE);
+    return (bool) ($this->getSettings()['local_test_mode'] ?? FALSE);
+  }
+
+  /**
+   * Get local test users.
+   *
+   * @phpstan-return array<string, mixed>
+   */
+  private function getLocalTestUsers(): array {
+    return (array) ($this->getSettings()['local_test_users'] ?? []);
+  }
+
+  /**
+   * Get this module's settings.
+   *
+   * @phpstan-return array<string, mixed>
+   */
+  private function getSettings(): array {
+    $settings = Settings::get('os2forms_nemlogin_openid_connect', NULL);
+
+    return $settings ?: [];
   }
 
   /**
@@ -296,7 +307,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $request = $this->requestStack->getCurrentRequest();
 
     if ($this->isLocalTestMode() && (bool) $request->get('test')) {
-      $users = $this->config->get('nemlogin_openid_connect_local_test_users');
+      $users = $this->getLocalTestUsers();
       $userId = $request->get('user');
       if (isset($users[$userId])) {
         $token = $users[$userId] + ['local_test' => TRUE];
