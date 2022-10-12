@@ -235,7 +235,6 @@ class OpenIDConnect extends AuthProviderBase {
       'nemlogin_openid_connect_client_secret' => '',
       'nemlogin_openid_connect_fetch_once' => '',
       'nemlogin_openid_connect_user_claims' => '',
-      'nemlogin_openid_connect_local_test_mode' => FALSE,
     ];
   }
 
@@ -279,13 +278,6 @@ class OpenIDConnect extends AuthProviderBase {
       '#title' => $this->t('User claims'),
       '#description' => $this->t('Describe user claims for use when comparing user values.<br/>Each line must be on the form <code>«claim»: «display name»</code>, e.g.<br/><br/><code>cpr: CPR-nummer<br/>email: E-mailadresse</code>'),
       '#default_value' => $this->configuration['nemlogin_openid_connect_user_claims'] ?? NULL,
-    ];
-
-    $form['nemlogin_openid_connect_local_test_mode'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Local test mode'),
-      '#description' => $this->t("If checked, we fake authentication using data defined in <code>\$config['os2forms_nemlogin_openid_connect']['nemlogin_openid_connect_local_test_users']</code> in <code>settings.local.php</code>."),
-      '#default_value' => $this->configuration['nemlogin_openid_connect_local_test_mode'] ?? NULL,
     ];
 
     return $form;
@@ -347,7 +339,6 @@ class OpenIDConnect extends AuthProviderBase {
     $configuration['nemlogin_openid_connect_client_secret'] = $form_state->getValue('nemlogin_openid_connect_client_secret');
     $configuration['nemlogin_openid_connect_fetch_once'] = $form_state->getValue('nemlogin_openid_connect_fetch_once');
     $configuration['nemlogin_openid_connect_user_claims'] = $form_state->getValue('nemlogin_openid_connect_user_claims');
-    $configuration['nemlogin_openid_connect_local_test_mode'] = $form_state->getValue('nemlogin_openid_connect_local_test_mode');
 
     $this->setConfiguration($configuration);
   }
