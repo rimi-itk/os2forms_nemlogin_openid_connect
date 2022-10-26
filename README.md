@@ -33,11 +33,7 @@ settings and specify “Webform type”:
 
 ## Local test
 
-When “Local test mode” in checked on
-`/admin/config/system/os2web-nemlogin/OpenIDConnect`, authentication is
-performed with local users defined in
-`$config['os2forms_nemlogin_openid_connect']['nemlogin_openid_connect_local_test_users']`
-in `settings.local.php`, e.g.
+Authenticating with local test users can be enabled in `settings.local.php`:
 
 ```php
 // Enable local test mode
