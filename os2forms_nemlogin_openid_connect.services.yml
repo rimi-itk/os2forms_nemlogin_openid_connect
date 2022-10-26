@@ -8,3 +8,4 @@ services:
     arguments:
       - '@os2web_nemlogin.auth_provider'
       - '@messenger'
+      - '@current_route_match'

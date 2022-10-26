@@ -4,6 +4,7 @@ namespace Drupal\os2forms_nemlogin_openid_connect\Helper;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\os2web_nemlogin\Service\AuthProviderService;
 use Drupal\webform\Utility\WebformFormHelper;
@@ -34,11 +35,19 @@ class WebformHelper {
   private MessengerInterface $messenger;
 
   /**
+   * The route match.
+   *
+   * @var \Drupal\Core\Routing\RouteMatchInterface
+   */
+  private RouteMatchInterface $routeMatch;
+
+  /**
    * Constructor.
    */
-  public function __construct(AuthProviderService $authProviderService, MessengerInterface $messenger) {
+  public function __construct(AuthProviderService $authProviderService, MessengerInterface $messenger, RouteMatchInterface $routeMatch) {
     $this->authProviderService = $authProviderService;
     $this->messenger = $messenger;
+    $this->routeMatch = $routeMatch;
   }
 
   /**
@@ -76,6 +85,11 @@ class WebformHelper {
    * Implements hook_ENTITY_TYPE_prepare_form().
    */
   public function webformSubmissionPrepareForm(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): void {
+    // Only perform access check when displaying form.
+    if ('entity.webform.canonical' !== $this->routeMatch->getRouteName()) {
+      return;
+    }
+
     try {
       $error = $this->checkAccess($webformSubmission, $operation, $formState);
 
@@ -109,7 +123,6 @@ class WebformHelper {
       $elementKey = $settings['element_key'];
       $userClaim = $settings['user_claim'];
 
-      // @todo How to handle admin users?
       $plugin = $this->authProviderService->getActivePlugin();
       if (!$plugin->isAuthenticated()) {
         return (string) $this->t('Not authenticated');
