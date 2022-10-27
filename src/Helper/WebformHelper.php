@@ -94,10 +94,6 @@ class WebformHelper {
       // Editing a submission.
       'entity.webform_submission.edit_form',
     ];
-    $accessCheckRouteNames = [
-      'entity.webform.canonical',
-      'entity.webform_submission.edit_form',
-    ];
     if (!in_array($this->routeMatch->getRouteName(), $accessCheckRouteNames, TRUE)) {
       return;
     }
