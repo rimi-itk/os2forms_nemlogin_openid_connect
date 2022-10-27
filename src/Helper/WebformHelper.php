@@ -87,6 +87,14 @@ class WebformHelper {
   public function webformSubmissionPrepareForm(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): void {
     // Only perform access check when displaying submission form.
     $accessCheckRouteNames = [
+      // Webform attached to a node.
+      'entity.node.canonical',
+      // Creating a new submission.
+      'entity.webform.canonical',
+      // Editing a submission.
+      'entity.webform_submission.edit_form',
+    ];
+    $accessCheckRouteNames = [
       'entity.webform.canonical',
       'entity.webform_submission.edit_form',
     ];
