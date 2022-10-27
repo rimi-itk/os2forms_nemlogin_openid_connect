@@ -85,8 +85,12 @@ class WebformHelper {
    * Implements hook_ENTITY_TYPE_prepare_form().
    */
   public function webformSubmissionPrepareForm(WebformSubmissionInterface $webformSubmission, string $operation, FormStateInterface $formState): void {
-    // Only perform access check when displaying form.
-    if ('entity.webform.canonical' !== $this->routeMatch->getRouteName()) {
+    // Only perform access check when displaying submission form.
+    $accessCheckRouteNames = [
+      'entity.webform.canonical',
+      'entity.webform_submission.edit_form',
+    ];
+    if (!in_array($this->routeMatch->getRouteName(), $accessCheckRouteNames, TRUE)) {
       return;
     }
 
