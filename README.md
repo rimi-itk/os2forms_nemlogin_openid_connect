@@ -31,6 +31,25 @@ settings and specify “Webform type”:
 
 ![Webform type](docs/assets/Webform-type.png)
 
+## Authentication settings
+
+When “Webform type” is specified it’s possible to add an authentication check on
+the form by requiring the value of a field (pre-filled with a value from a
+previous submission) to match the value of a specified user property.
+
+Before using authentication checks, “User claims” available for the checks must
+be defined on `/admin/config/system/os2web-nemlogin/OpenIDConnect`.
+
+Edit a webform, go to Settings > Third Party Settings > OS2Forms > OS2Forms
+NemID settings > Authentication settings and define which “User claim” value
+must match a “Form element” value:
+
+![Authentication settings](docs/assets/authentication-settings.png)
+
+Note: The authentication check sits on top of the other access checks in
+OS2Forms, i.e. it does not itself grant access, but adds additonal requirements
+that must be fulfilled before a user can fill in a form.
+
 ## Local test
 
 Authenticating with local test users can be enabled in `settings.local.php`:
