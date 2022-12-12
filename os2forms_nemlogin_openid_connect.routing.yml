@@ -7,3 +7,13 @@ os2forms_nemlogin_openid_connect.openid_connect_authenticate:
     _access: 'TRUE'
   options:
     no_cache: 'TRUE'
+
+os2forms_nemlogin_openid_connect.openid_connect_end_session:
+  path: '/os2forms_nemlogin_openid_connect/end-session'
+  defaults:
+    _controller: 'Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController::endSession'
+  requirements:
+    # Anonymous users must be able to access this route.
+    _access: 'TRUE'
+  options:
+    no_cache: 'TRUE'

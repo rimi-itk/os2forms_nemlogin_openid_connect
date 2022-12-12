@@ -234,6 +234,7 @@ class OpenIDConnect extends AuthProviderBase {
       'nemlogin_openid_connect_client_id' => '',
       'nemlogin_openid_connect_client_secret' => '',
       'nemlogin_openid_connect_fetch_once' => '',
+      'nemlogin_openid_connect_post_logout_redirect_uri' => '',
       'nemlogin_openid_connect_user_claims' => '',
     ];
   }
@@ -273,6 +274,14 @@ class OpenIDConnect extends AuthProviderBase {
       '#description' => $this->t('User will be logged out immediately after login. User data will be removed from session after first retrieving'),
     ];
 
+    $form['nemlogin_openid_connect_post_logout_redirect_uri'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Post logout redirect url'),
+      '#required' => TRUE,
+      '#default_value' => $this->configuration['nemlogin_openid_connect_post_logout_redirect_uri'] ?? NULL,
+      '#description' => $this->t('Url to redirect to after logout. Can be an internal path, e.g. <code>/node/87</code>, or an external url, e.g. <code>https://aarhus.dk</code>'),
+    ];
+
     $form['nemlogin_openid_connect_user_claims'] = [
       '#type' => 'textarea',
       '#title' => $this->t('User claims'),
@@ -293,6 +302,14 @@ class OpenIDConnect extends AuthProviderBase {
 
     if (!UrlHelper::isValid($url, TRUE)) {
       $form_state->setErrorByName('nemlogin_openid_connect_discovery_url', $this->t('Url is not valid'));
+    }
+
+    $url = $form_state->getValue('nemlogin_openid_connect_post_logout_redirect_uri');
+    try {
+      UrlHelper::isExternal($url) ? Url::fromUri($url) : Url::fromUserInput($url);
+    }
+    catch (\Exception $exception) {
+      $form_state->setErrorByName('nemlogin_openid_connect_post_logout_redirect_uri', $this->t('Post logout redirect url is not valid (@message)', ['@message' => $exception->getMessage()]));
     }
 
     $claims = $form_state->getValue('nemlogin_openid_connect_user_claims');
@@ -338,6 +355,7 @@ class OpenIDConnect extends AuthProviderBase {
     $configuration['nemlogin_openid_connect_client_id'] = $form_state->getValue('nemlogin_openid_connect_client_id');
     $configuration['nemlogin_openid_connect_client_secret'] = $form_state->getValue('nemlogin_openid_connect_client_secret');
     $configuration['nemlogin_openid_connect_fetch_once'] = $form_state->getValue('nemlogin_openid_connect_fetch_once');
+    $configuration['nemlogin_openid_connect_post_logout_redirect_uri'] = $form_state->getValue('nemlogin_openid_connect_post_logout_redirect_uri');
     $configuration['nemlogin_openid_connect_user_claims'] = $form_state->getValue('nemlogin_openid_connect_user_claims');
 
     $this->setConfiguration($configuration);
