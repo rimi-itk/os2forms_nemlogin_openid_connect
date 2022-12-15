@@ -2,6 +2,7 @@
 
 namespace Drupal\os2forms_nemlogin_openid_connect\Controller;
 
+use Drupal\Component\Utility\UrlHelper;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Language\LanguageInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
@@ -266,6 +267,44 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $this->setSessionValue(self::SESSION_STATE, $provider->getState());
 
     return new TrustedRedirectResponse($authorizationUrl);
+  }
+
+  /**
+   * End OpenID Connect session.
+   *
+   * @return \Symfony\Component\HttpFoundation\Response
+   *   The response.
+   */
+  public function endSession(): Response {
+    $provider = $this->getOpenIdConfigurationProvider();
+
+    $postLogoutRedirectUri = $this->getPostLogoutRedirectUri();
+    $endSessionUrl = $this->isLocalTestMode()
+      ? $postLogoutRedirectUri
+      : $provider->getEndSessionUrl($postLogoutRedirectUri);
+
+    return new TrustedRedirectResponse($endSessionUrl);
+  }
+
+  /**
+   * Get post logout redirect uri.
+   */
+  private function getPostLogoutRedirectUri(): string {
+    try {
+      $pluginConfiguration = $this->plugin->getConfiguration();
+      $url = $pluginConfiguration['nemlogin_openid_connect_post_logout_redirect_uri'] ?? '/';
+      $options = ['absolute' => TRUE];
+
+      $url = UrlHelper::isExternal($url)
+        ? Url::fromUri($url, $options)
+        : Url::fromUserInput($url, $options);
+
+      return $url->toString(TRUE)->getGeneratedUrl();
+    }
+    catch (\Exception $exception) {
+      // Fallback if all other things fail.
+      return '/';
+    }
   }
 
   /**
