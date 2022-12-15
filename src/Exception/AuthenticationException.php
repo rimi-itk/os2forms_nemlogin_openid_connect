@@ -25,7 +25,7 @@ class AuthenticationException extends \RuntimeException {
   /**
    * Get description.
    */
-  public function getDescription() {
+  public function getDescription(): ?string {
     return $this->description;
   }
 
