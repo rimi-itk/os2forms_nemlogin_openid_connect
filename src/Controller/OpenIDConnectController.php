@@ -305,7 +305,10 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     try {
       $pluginConfiguration = $this->plugin->getConfiguration();
       $url = $pluginConfiguration['nemlogin_openid_connect_post_logout_redirect_uri'] ?? '/';
-      $options = ['absolute' => TRUE];
+      $options = [
+        'absolute' => TRUE,
+        'path_processing' => FALSE,
+      ];
 
       $url = UrlHelper::isExternal($url)
         ? Url::fromUri($url, $options)
