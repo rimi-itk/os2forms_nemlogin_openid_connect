@@ -50,6 +50,11 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private const SESSION_NONCE = 'os2forms_nemlogin_openid_connect.oauth2nonce';
 
   /**
+   * Session name for storing is token.
+   */
+  private const SESSION_ID_TOKEN = 'os2forms_nemlogin_openid_connect.id_token';
+
+  /**
    * Name of login destination query parameter.
    *
    * Important: Must not be 'destination'!
@@ -288,7 +293,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $postLogoutRedirectUri = $this->getPostLogoutRedirectUri();
     $endSessionUrl = $this->isLocalTestMode()
       ? $postLogoutRedirectUri
-      : $provider->getEndSessionUrl($postLogoutRedirectUri);
+      : $provider->getEndSessionUrl($postLogoutRedirectUri, NULL, $this->getSessionValue(self::SESSION_ID_TOKEN));
 
     return new TrustedRedirectResponse($endSessionUrl);
   }
@@ -386,11 +391,12 @@ class OpenIDConnectController implements ContainerInjectionInterface {
         $token = (array) $provider->validateIdToken($request->query->get('id_token'), $this->getSessionValue(self::SESSION_NONCE));
       }
       elseif ($request->query->has('code')) {
-        $token = (array) $provider->getIdToken(
+        $idToken = $provider->getIdToken(
           $request->query->get('code'),
           $this->getRedirectUri(),
-          $this->getSessionValue(self::SESSION_NONCE
-          ));
+        );
+        $this->setSessionValue(self::SESSION_ID_TOKEN, $idToken);
+        $token = (array) $provider->validateIdToken($idToken, $this->getSessionValue(self::SESSION_NONCE));
       }
       else {
         $this->error('Missing id_token or code in response', ['query' => $request->query->all()]);
