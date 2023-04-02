@@ -174,6 +174,7 @@ class OpenIDConnect extends AuthProviderBase {
    */
   public function logout() {
     $this->getToken(TRUE);
+    $this->values = [];
 
     $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_end_session')
       ->toString(TRUE)
