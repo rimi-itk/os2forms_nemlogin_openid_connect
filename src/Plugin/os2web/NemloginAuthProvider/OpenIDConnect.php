@@ -97,6 +97,11 @@ class OpenIDConnect extends AuthProviderBase {
    * {@inheritdoc}
    */
   public function isInitialized() {
+    $configuration = $configuration = $this->getConfiguration();
+    if (isset($configuration['nemlogin_openid_connect_discovery_url']) && !empty($configuration['nemlogin_openid_connect_discovery_url'])) {
+      return TRUE;
+    }
+
     return FALSE;
   }
 
