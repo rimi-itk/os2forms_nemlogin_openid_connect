@@ -102,8 +102,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    * Constructor.
    */
   public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, RendererInterface $renderer) {
-    $reflect = new \ReflectionClass(OpenIDConnect::class);
-    $this->plugin = $authProviderService->getPluginInstance($reflect->getShortName());
+    $this->plugin = $authProviderService->getPluginInstance('OpenIDConnect');
 
     $this->requestStack = $requestStack;
     $this->session = $session;
