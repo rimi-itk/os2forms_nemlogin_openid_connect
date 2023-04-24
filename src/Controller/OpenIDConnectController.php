@@ -102,11 +102,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    * Constructor.
    */
   public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, RendererInterface $renderer) {
-    $plugin = $authProviderService->getActivePlugin();
-    if (!$plugin instanceof OpenIDConnect) {
-      throw new AuthenticationException(sprintf('Invalid plugin: %s; Expected %s', get_class($plugin), OpenIDConnect::class));
-    }
-    $this->plugin = $plugin;
+    $this->plugin = $authProviderService->getPluginInstance('OpenIDConnect');
 
     $this->requestStack = $requestStack;
     $this->session = $session;
