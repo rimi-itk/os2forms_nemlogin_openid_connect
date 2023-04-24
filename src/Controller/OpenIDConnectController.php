@@ -13,6 +13,7 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\os2forms_nemlogin_openid_connect\Exception\AuthenticationException;
+use Drupal\os2forms_nemlogin_openid_connect\Plugin\os2web\NemloginAuthProvider\OpenIDConnect;
 use Drupal\os2web_nemlogin\Service\AuthProviderService;
 use ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider;
 use Psr\Cache\CacheItemPoolInterface;
@@ -101,7 +102,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    * Constructor.
    */
   public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, RendererInterface $renderer) {
-    $this->plugin = $authProviderService->getPluginInstance('OpenIDConnect');
+    $plugin = $authProviderService->getPluginInstance('OpenIDConnect');
+    assert($plugin instanceof OpenIDConnect);
+    $this->plugin = $plugin;
 
     $this->requestStack = $requestStack;
     $this->session = $session;
