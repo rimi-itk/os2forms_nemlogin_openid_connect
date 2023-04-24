@@ -13,7 +13,6 @@ use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 use Drupal\os2forms_nemlogin_openid_connect\Exception\AuthenticationException;
-use Drupal\os2forms_nemlogin_openid_connect\Plugin\os2web\NemloginAuthProvider\OpenIDConnect;
 use Drupal\os2web_nemlogin\Service\AuthProviderService;
 use ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider;
 use Psr\Cache\CacheItemPoolInterface;
