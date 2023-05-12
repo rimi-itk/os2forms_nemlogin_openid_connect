@@ -182,6 +182,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       'clientId' => $pluginConfiguration['nemlogin_openid_connect_client_id'],
       'clientSecret' => $pluginConfiguration['nemlogin_openid_connect_client_secret'],
       'localTestMode' => FALSE,
+      'allowHttp' => (bool) ($this->getSettings()['allow_http'] ?? FALSE),
     ];
 
     return new OpenIdConfigurationProvider($providerOptions);
@@ -390,21 +391,14 @@ class OpenIDConnectController implements ContainerInjectionInterface {
 
       $provider = $this->getOpenIdConfigurationProvider();
 
-      if ($request->query->has('id_token')) {
-        $token = (array) $provider->validateIdToken($request->query->get('id_token'), $this->getSessionValue(self::SESSION_NONCE));
-      }
-      elseif ($request->query->has('code')) {
-        $idToken = $provider->getIdToken(
-          $request->query->get('code'),
-          $this->getRedirectUri(),
-        );
-        $this->setSessionValue(self::SESSION_ID_TOKEN, $idToken);
-        $token = (array) $provider->validateIdToken($idToken, $this->getSessionValue(self::SESSION_NONCE));
-      }
-      else {
-        $this->error('Missing id_token or code in response', ['query' => $request->query->all()]);
-        throw new BadRequestHttpException('Missing id_token or code in response');
-      }
+      $idToken = match (TRUE) {
+        $request->query->has('code') => $provider->getIdToken($request->query->get('code')),
+        $request->query->has('id_token') => $request->query->get('id_token'),
+        default => throw new BadRequestHttpException('Missing code or id_token in response')
+      };
+
+      $token = (array) $provider->validateIdToken($idToken, $this->getSessionValue(self::SESSION_NONCE));
+      $this->setSessionValue(self::SESSION_ID_TOKEN, $idToken);
     }
 
     // Store the token for use by the authentication plugin.

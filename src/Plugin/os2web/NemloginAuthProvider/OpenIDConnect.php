@@ -220,7 +220,7 @@ class OpenIDConnect extends AuthProviderBase {
   /**
    * {@inheritdoc}
    *
-   * @phpstan-param string $key
+   * @phpstan-param string|array<string, mixed> $key
    */
   public function fetchValue($key) {
     $value = parent::fetchValue($key);
