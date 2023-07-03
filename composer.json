@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "itk-dev/openid-connect": "^2.1.0",
+        "itk-dev/openid-connect": "^3.1",
         "itk-dev/drupal_psr6_cache": "^1.0",
         "os2web/os2web_nemlogin": "^1.2",
         "drupal/webform": "^6.0"
