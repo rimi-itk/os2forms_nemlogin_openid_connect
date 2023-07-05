@@ -100,6 +100,7 @@ jobs:
           composer coding-standards-check/twigcs
 
   php-code-analysis:
+    # if: false # TODO: Investigate why this suddenly fails.
     name: PHP code analysis
     runs-on: ubuntu-latest
     strategy:

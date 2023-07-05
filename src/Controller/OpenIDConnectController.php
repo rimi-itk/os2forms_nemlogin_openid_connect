@@ -50,6 +50,11 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private const SESSION_NONCE = 'os2forms_nemlogin_openid_connect.oauth2nonce';
 
   /**
+   * Session name for storing is token.
+   */
+  private const SESSION_ID_TOKEN = 'os2forms_nemlogin_openid_connect.id_token';
+
+  /**
    * Name of login destination query parameter.
    *
    * Important: Must not be 'destination'!
@@ -171,22 +176,30 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $pluginConfiguration = $this->plugin->getConfiguration();
 
     $providerOptions = [
-      'redirectUri' => Url::fromRoute(
-        'os2forms_nemlogin_openid_connect.openid_connect_authenticate',
-        [],
-        [
-          'absolute' => TRUE,
-          'language' => $this->languageManager->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE),
-        ]
-      )->toString(TRUE)->getGeneratedUrl(),
+      'redirectUri' => $this->getRedirectUri(),
       'openIDConnectMetadataUrl' => $pluginConfiguration['nemlogin_openid_connect_discovery_url'],
       'cacheItemPool' => $this->cacheItemPool,
       'clientId' => $pluginConfiguration['nemlogin_openid_connect_client_id'],
       'clientSecret' => $pluginConfiguration['nemlogin_openid_connect_client_secret'],
       'localTestMode' => FALSE,
+      'allowHttp' => (bool) ($this->getSettings()['allow_http'] ?? FALSE),
     ];
 
     return new OpenIdConfigurationProvider($providerOptions);
+  }
+
+  /**
+   * Get redirect URI.
+   */
+  private function getRedirectUri(): string {
+    return Url::fromRoute(
+      'os2forms_nemlogin_openid_connect.openid_connect_authenticate',
+      [],
+      [
+        'absolute' => TRUE,
+        'language' => $this->languageManager->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE),
+      ]
+    )->toString(TRUE)->getGeneratedUrl();
   }
 
   /**
@@ -257,6 +270,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $options = [
       'state' => $state,
       'nonce' => $nonce,
+      'response_type' => 'code',
+      'scope' => 'openid email profile',
     ];
     $authorizationUrl = $this->isLocalTestMode()
       ? Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', $options + ['test' => TRUE])->toString(TRUE)->getGeneratedUrl()
@@ -279,7 +294,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $postLogoutRedirectUri = $this->getPostLogoutRedirectUri();
     $endSessionUrl = $this->isLocalTestMode()
       ? $postLogoutRedirectUri
-      : $provider->getEndSessionUrl($postLogoutRedirectUri);
+      : $provider->getEndSessionUrl($postLogoutRedirectUri, NULL, $this->getSessionValue(self::SESSION_ID_TOKEN));
 
     return new TrustedRedirectResponse($endSessionUrl);
   }
@@ -291,7 +306,10 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     try {
       $pluginConfiguration = $this->plugin->getConfiguration();
       $url = $pluginConfiguration['nemlogin_openid_connect_post_logout_redirect_uri'] ?? '/';
-      $options = ['absolute' => TRUE];
+      $options = [
+        'absolute' => TRUE,
+        'path_processing' => FALSE,
+      ];
 
       $url = UrlHelper::isExternal($url)
         ? Url::fromUri($url, $options)
@@ -360,9 +378,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       }
     }
     else {
-      if (!$request->query->has('state') || !$request->query->has('id_token')) {
-        $this->error('Missing state or id_token in response', ['query' => $request->query->all()]);
-        throw new BadRequestHttpException('Missing state or id_token in response');
+      if (!$request->query->has('state')) {
+        $this->error('Missing state in response', ['query' => $request->query->all()]);
+        throw new BadRequestHttpException('Missing state in response');
       }
 
       $state = $this->getSessionValue(self::SESSION_STATE);
@@ -373,7 +391,14 @@ class OpenIDConnectController implements ContainerInjectionInterface {
 
       $provider = $this->getOpenIdConfigurationProvider();
 
-      $token = (array) $provider->validateIdToken($request->query->get('id_token'), $this->getSessionValue(self::SESSION_NONCE));
+      $idToken = match (TRUE) {
+        $request->query->has('code') => $provider->getIdToken($request->query->get('code')),
+        $request->query->has('id_token') => $request->query->get('id_token'),
+        default => throw new BadRequestHttpException('Missing code or id_token in response')
+      };
+
+      $token = (array) $provider->validateIdToken($idToken, $this->getSessionValue(self::SESSION_NONCE));
+      $this->setSessionValue(self::SESSION_ID_TOKEN, $idToken);
     }
 
     // Store the token for use by the authentication plugin.

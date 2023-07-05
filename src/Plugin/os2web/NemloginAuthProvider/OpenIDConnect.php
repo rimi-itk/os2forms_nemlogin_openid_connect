@@ -150,7 +150,7 @@ class OpenIDConnect extends AuthProviderBase {
 
     $token = $this->getToken();
     if (NULL === $token) {
-      // Pass the current request uri on the the controller to tell it where to
+      // Pass the current request uri on to the controller to tell it where to
       // return to after authentication.
       $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', [
         OpenIDConnectController::QUERY_LOCATION_NAME => $request->getRequestUri(),
@@ -174,8 +174,11 @@ class OpenIDConnect extends AuthProviderBase {
    */
   public function logout() {
     $this->getToken(TRUE);
+    $this->values = [];
 
-    $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_end_session')->toString();
+    $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_end_session')
+      ->toString(TRUE)
+      ->getGeneratedUrl();
 
     return (new TrustedRedirectResponse($url))
       ->send();
@@ -217,7 +220,7 @@ class OpenIDConnect extends AuthProviderBase {
   /**
    * {@inheritdoc}
    *
-   * @phpstan-param string $key
+   * @phpstan-param string|array<string, mixed> $key
    */
   public function fetchValue($key) {
     $value = parent::fetchValue($key);
