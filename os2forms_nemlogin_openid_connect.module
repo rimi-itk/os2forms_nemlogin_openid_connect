@@ -8,6 +8,7 @@
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
 use Drupal\os2forms_nemlogin_openid_connect\Helper\WebformHelper;
+use Drupal\os2forms_nemlogin_openid_connect\Helper\Settings;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
@@ -77,16 +78,9 @@ function os2forms_nemlogin_openid_connect_os2web_nemlogin_auth_provider_info_alt
     $template = $definitions['OpenIDConnect'];
     unset($definitions['OpenIDConnect']);
 
-    // @todo Move this to config.
-    $spec = [
-      'OpenIDConnect' => 'OpenIDConnect',
-      'OpenIDConnect_ad' => 'OpenIDConnect_ad',
-      'OpenIDConnect_3' => 'OpenIDConnect_3',
-      'OpenIDConnect_4' => 'OpenIDConnect_4',
-      'OpenIDConnect_5' => 'Jeppe',
-    ];
+    $providers = Drupal::service(Settings::class)->getProvidersAsArray();
 
-    foreach ($spec as $id => $label) {
+    foreach ($providers as $id => $label) {
       $definitions[$id] = [
         'id' => $id,
         'label' => $label,

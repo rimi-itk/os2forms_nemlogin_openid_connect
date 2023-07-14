@@ -17,3 +17,11 @@ os2forms_nemlogin_openid_connect.openid_connect_end_session:
     _access: 'TRUE'
   options:
     no_cache: 'TRUE'
+
+os2forms_nemlogin_openid_connect.admin.settings:
+  path: '/admin/os2forms_nemlogin_openid_connect/settings'
+  defaults:
+    _form: '\Drupal\os2forms_nemlogin_openid_connect\Form\SettingsForm'
+    _title: 'OS2Forms NemLogin OpenID Connect settings'
+  requirements:
+    _permission: 'administer site configuration'

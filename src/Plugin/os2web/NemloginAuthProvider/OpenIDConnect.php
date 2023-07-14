@@ -329,8 +329,8 @@ class OpenIDConnect extends AuthProviderBase {
 
     $claims = $form_state->getValue('nemlogin_openid_connect_user_claims');
     try {
-      $value = Yaml::parse($claims);
-      foreach ($value as $name => $value) {
+      $values = Yaml::parse($claims);
+      foreach ($values as $name => $value) {
         if (!is_string($name)) {
           $form_state->setErrorByName(
             'nemlogin_openid_connect_user_claims',

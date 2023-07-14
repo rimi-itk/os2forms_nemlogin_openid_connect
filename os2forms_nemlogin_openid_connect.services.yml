@@ -9,3 +9,7 @@ services:
       - '@os2web_nemlogin.auth_provider'
       - '@messenger'
       - '@current_route_match'
+
+  Drupal\os2forms_nemlogin_openid_connect\Helper\Settings:
+    arguments:
+      - "@keyvalue"
