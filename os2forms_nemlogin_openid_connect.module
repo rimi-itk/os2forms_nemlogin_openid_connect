@@ -62,8 +62,35 @@ function os2forms_nemlogin_openid_connect_theme(array $existing, string $type, s
     'os2forms_nemlogin_openid_connect_local_test_users' => [
       'variables' => [
         'users' => NULL,
+        'plugin' => NULL,
         'query' => NULL,
       ],
     ],
   ];
+}
+
+/**
+ * Implements hook_os2web_nemlogin_auth_provider_info_alter().
+ */
+function os2forms_nemlogin_openid_connect_os2web_nemlogin_auth_provider_info_alter(array &$definitions) {
+  if (isset($definitions['OpenIDConnect'])) {
+    $template = $definitions['OpenIDConnect'];
+    unset($definitions['OpenIDConnect']);
+
+    // @todo Move this to config.
+    $spec = [
+      'OpenIDConnect' => 'OpenIDConnect',
+      'OpenIDConnect_ad' => 'OpenIDConnect_ad',
+      'OpenIDConnect_3' => 'OpenIDConnect_3',
+      'OpenIDConnect_4' => 'OpenIDConnect_4',
+      'OpenIDConnect_5' => 'Jeppe',
+    ];
+
+    foreach ($spec as $id => $label) {
+      $definitions[$id] = [
+        'id' => $id,
+        'label' => $label,
+      ] + $template;
+    }
+  }
 }

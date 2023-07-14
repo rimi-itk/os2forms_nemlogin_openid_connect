@@ -106,11 +106,14 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   /**
    * Constructor.
    */
-  public function __construct(AuthProviderService $authProviderService, RequestStack $requestStack, SessionInterface $session, CacheItemPoolInterface $cacheItemPool, LanguageManagerInterface $languageManager, LoggerInterface $logger, RendererInterface $renderer) {
-    $plugin = $authProviderService->getPluginInstance('OpenIDConnect');
-    assert($plugin instanceof OpenIDConnect);
-    $this->plugin = $plugin;
-
+  public function __construct(
+    readonly private AuthProviderService $authProviderService,
+    RequestStack $requestStack,
+  SessionInterface $session,
+  CacheItemPoolInterface $cacheItemPool,
+  LanguageManagerInterface $languageManager,
+  LoggerInterface $logger,
+  RendererInterface $renderer) {
     $this->requestStack = $requestStack;
     $this->session = $session;
     $this->cacheItemPool = $cacheItemPool;
@@ -144,7 +147,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    *
    * @phpstan-return array<string, mixed>|Response
    */
-  public function main() {
+  public function main(string $id) {
+    $this->initialize($id);
     try {
       $request = $this->requestStack->getCurrentRequest();
 
@@ -194,7 +198,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function getRedirectUri(): string {
     return Url::fromRoute(
       'os2forms_nemlogin_openid_connect.openid_connect_authenticate',
-      [],
+      [
+        'id' => $this->getPluginId(),
+      ],
       [
         'absolute' => TRUE,
         'language' => $this->languageManager->getLanguage(LanguageInterface::LANGCODE_NOT_APPLICABLE),
@@ -274,7 +280,10 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       'scope' => 'openid email profile',
     ];
     $authorizationUrl = $this->isLocalTestMode()
-      ? Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', $options + ['test' => TRUE])->toString(TRUE)->getGeneratedUrl()
+      ? Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', $options + [
+        'id' => $this->getPluginId(),
+        'test' => TRUE,
+      ])->toString(TRUE)->getGeneratedUrl()
       : $provider->getAuthorizationUrl($options);
 
     $this->setSessionValue(self::SESSION_STATE, $provider->getState());
@@ -288,7 +297,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    * @return \Symfony\Component\HttpFoundation\Response
    *   The response.
    */
-  public function endSession(): Response {
+  public function endSession(string $id): Response {
+    $this->initialize($id);
     $provider = $this->getOpenIdConfigurationProvider();
 
     $postLogoutRedirectUri = $this->getPostLogoutRedirectUri();
@@ -346,8 +356,14 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    */
   private function getSettings(): array {
     $settings = Settings::get('os2forms_nemlogin_openid_connect', NULL);
+    if (!is_array($settings)) {
+      $settings = [];
+    }
 
-    return $settings ?: [];
+    // Merge in plugin specific settings if any.
+    return isset($settings[$this->getPluginId()]) && is_array($settings[$this->getPluginId()])
+      ? array_merge($settings, $settings[$this->getPluginId()])
+      : $settings;
   }
 
   /**
@@ -371,7 +387,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
         $renderable = [
           '#theme' => 'os2forms_nemlogin_openid_connect_local_test_users',
           '#users' => $users,
-          '#query' => $request->query->all(),
+          '#plugin' => $this->plugin,
+          '#query' => ['id' => $this->getPluginId()] + $request->query->all(),
         ];
 
         return new Response($this->renderer->renderPlain($renderable));
@@ -463,6 +480,22 @@ class OpenIDConnectController implements ContainerInjectionInterface {
         '#url' => $this->getLoginLocation(),
       ],
     ];
+  }
+
+  /**
+   * Initialize.
+   */
+  private function initialize(string $id): void {
+    $plugin = $this->authProviderService->getPluginInstance($id);
+    assert($plugin instanceof OpenIDConnect);
+    $this->plugin = $plugin;
+  }
+
+  /**
+   * Get plugin id.
+   */
+  private function getPluginId(): string {
+    return $this->plugin->getPluginId();
   }
 
 }

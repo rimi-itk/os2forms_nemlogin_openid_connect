@@ -69,4 +69,17 @@ $settings['os2forms_nemlogin_openid_connect']['local_test_users'] = [
     …
   ],
 ];
+
+// Override settings for specific plugins:
+$settings['os2forms_nemlogin_openid_connect']['my-plugin-id']['local_test_mode'] = FALSE;
+
+// Define local test users
+//   User id => user info (claims)
+$settings['os2forms_nemlogin_openid_connect']['another-plugin-id']['local_test_users'] = [
+  'user087' => [
+    'id' => 'user087',
+    'name' => 'User 87',
+  ],
+];
+
 ```
