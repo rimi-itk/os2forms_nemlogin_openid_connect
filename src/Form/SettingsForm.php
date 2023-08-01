@@ -36,8 +36,7 @@ final class SettingsForm extends FormBase {
   /**
    * {@inheritdoc}
    */
-  public static function create(ContainerInterface $container): SettingsForm
-  {
+  public static function create(ContainerInterface $container): SettingsForm {
     return new static(
       $container->get(Settings::class),
     );
@@ -142,4 +141,3 @@ final class SettingsForm extends FormBase {
   }
 
 }
-

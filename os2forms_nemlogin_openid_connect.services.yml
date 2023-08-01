@@ -13,3 +13,9 @@ services:
   Drupal\os2forms_nemlogin_openid_connect\Helper\Settings:
     arguments:
       - "@keyvalue"
+
+  Drupal\os2forms_nemlogin_openid_connect\EventSubscriber\OrganisationEventSubscriber:
+    arguments:
+      - '@os2web_nemlogin.auth_provider'
+    tags:
+      - { name: 'event_subscriber' }
