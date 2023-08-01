@@ -89,6 +89,8 @@ final class Settings {
 
   /**
    * Get provider array.
+   *
+   * @phpstan-return array<string, mixed>
    */
   public function getProvidersAsArray(): array {
     $values = Yaml::parse($this->getProviders());

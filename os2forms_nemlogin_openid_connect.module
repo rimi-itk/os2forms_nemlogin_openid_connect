@@ -72,8 +72,10 @@ function os2forms_nemlogin_openid_connect_theme(array $existing, string $type, s
 
 /**
  * Implements hook_os2web_nemlogin_auth_provider_info_alter().
+ *
+ * @phpstan-param array<string, mixed> $definitions
  */
-function os2forms_nemlogin_openid_connect_os2web_nemlogin_auth_provider_info_alter(array &$definitions) {
+function os2forms_nemlogin_openid_connect_os2web_nemlogin_auth_provider_info_alter(array &$definitions): void {
   if (isset($definitions['OpenIDConnect'])) {
     $template = $definitions['OpenIDConnect'];
     unset($definitions['OpenIDConnect']);

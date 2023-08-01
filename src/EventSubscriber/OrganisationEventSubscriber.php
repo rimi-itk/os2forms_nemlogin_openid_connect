@@ -31,18 +31,31 @@ class OrganisationEventSubscriber implements EventSubscriberInterface {
    */
   public static function getSubscribedEvents(): array {
     return [
+      // If class does not exist this event subscriber is not initialized,
+      // meaning this will cause no error.
+      // @see https://www.php.net/manual/en/language.namespaces.importing.php#121045
+      /* @phpstan-ignore-next-line */
       OrganisationUserIdEvent::class => ['setOrganisationUserId', 100],
     ];
   }
 
   /**
    * Attempts settings organisation user id.
+   *
+   * @phpstan-ignore-next-line
    */
-  public function setOrganisationUserId(OrganisationUserIdEvent $event) {
+  public function setOrganisationUserId(OrganisationUserIdEvent $event): void {
+    // Check if id has already been set.
+    /* @phpstan-ignore-next-line */
+    if (!empty($event->getId())) {
+      return;
+    }
+
     try {
       $plugin = $this->authProvider->getActivePlugin();
 
       if ($plugin->isAuthenticated() && !empty($plugin->fetchValue('nameidentifier'))) {
+        /* @phpstan-ignore-next-line */
         $event->setId($plugin->fetchValue('nameidentifier'));
       }
     }
