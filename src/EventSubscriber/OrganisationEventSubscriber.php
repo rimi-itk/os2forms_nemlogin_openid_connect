@@ -34,6 +34,8 @@ class OrganisationEventSubscriber implements EventSubscriberInterface {
       // If class does not exist this event subscriber is not initialized,
       // meaning this will cause no error.
       // @see https://www.php.net/manual/en/language.namespaces.importing.php#121045
+      // This is done to avoid a hard dependency on os2forms_organsation.
+      // Set priority high (100) to get this running early.
       /* @phpstan-ignore-next-line */
       OrganisationUserIdEvent::class => ['setOrganisationUserId', 100],
     ];
@@ -47,7 +49,7 @@ class OrganisationEventSubscriber implements EventSubscriberInterface {
   public function setOrganisationUserId(OrganisationUserIdEvent $event): void {
     // Check if id has already been set.
     /* @phpstan-ignore-next-line */
-    if (!empty($event->getId())) {
+    if (!empty($event->getUserId())) {
       return;
     }
 
@@ -56,7 +58,7 @@ class OrganisationEventSubscriber implements EventSubscriberInterface {
 
       if ($plugin->isAuthenticated() && !empty($plugin->fetchValue('nameidentifier'))) {
         /* @phpstan-ignore-next-line */
-        $event->setId($plugin->fetchValue('nameidentifier'));
+        $event->setUserId($plugin->fetchValue('nameidentifier'));
       }
     }
     catch (PluginException $exception) {

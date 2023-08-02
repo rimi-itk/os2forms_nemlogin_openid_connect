@@ -69,57 +69,17 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private $plugin;
 
   /**
-   * The request stack.
-   *
-   * @var \Symfony\Component\HttpFoundation\RequestStack
-   */
-  private $requestStack;
-
-  /**
-   * The session.
-   *
-   * @var \Symfony\Component\HttpFoundation\Session\SessionInterface
-   */
-  private $session;
-
-  /**
-   * The language manager.
-   *
-   * @var \Drupal\Core\Language\LanguageManagerInterface
-   */
-  private $languageManager;
-
-  /**
-   * The cache item pool.
-   *
-   * @var \Psr\Cache\CacheItemPoolInterface
-   */
-  private $cacheItemPool;
-
-  /**
-   * The renderer.
-   *
-   * @var \Drupal\Core\Render\RendererInterface
-   */
-  private $renderer;
-
-  /**
-   * Constructor.
+   * The constructor.
    */
   public function __construct(
-    readonly private AuthProviderService $authProviderService,
-    RequestStack $requestStack,
-  SessionInterface $session,
-  CacheItemPoolInterface $cacheItemPool,
-  LanguageManagerInterface $languageManager,
-  LoggerInterface $logger,
-  RendererInterface $renderer) {
-    $this->requestStack = $requestStack;
-    $this->session = $session;
-    $this->cacheItemPool = $cacheItemPool;
-    $this->languageManager = $languageManager;
+    private readonly AuthProviderService $authProviderService,
+    private readonly RequestStack $requestStack,
+    private readonly SessionInterface $session,
+    private readonly CacheItemPoolInterface $cacheItemPool,
+    private readonly LanguageManagerInterface $languageManager,
+    LoggerInterface $logger,
+    private readonly RendererInterface $renderer) {
     $this->setLogger($logger);
-    $this->renderer = $renderer;
   }
 
   /**

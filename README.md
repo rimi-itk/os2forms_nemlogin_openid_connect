@@ -3,11 +3,12 @@
 Implements an [OS2Web NemLog-in
 `AuthProvider`](https://github.com/OS2web/os2web_nemlogin/blob/master/src/Annotation/AuthProvider.php),
 [`OpenIDConnect`](src/Plugin/os2web/NemloginAuthProvider/OpenIDConnect.php), for
-authenticating with [OpenID Connect](https://openid.net/connect/).
+authenticating with [OpenID Connect](https://openid.net/connect/). But allows for multiple of
+these to be defined eg. AD and NemLogin.
 
 A controller,
 [`OpenIDConnectController`](src/Controller/OpenIDConnectController.php), takes
-care of the actual NemLog-in authenticating.
+care of the actual authenticating.
 
 ## Installation
 
@@ -16,12 +17,24 @@ composer require itk-dev/os2forms_nemlogin_openid_connect
 vendor/bin/drush pm:enable os2forms_nemlogin_openid_connect
 ```
 
+The module has a soft dependency on `os2forms_organisation` in the sense that
+the `OrganisationEventSubscriber` only will be initialized if the
+`os2forms_organisation` module is installed. See the comments in
+`OrganisationEventSubscriber::getSubscribedEvents`.
+
 ## Configuration
 
-Go to `/admin/config/system/os2web-nemlogin/OpenIDConnect` to set up the OpenID
+Go to `/admin/os2forms_nemlogin_openid_connect/settings` to set up providers, eg.
+
+```yaml
+openid_connect_nemlogin: OpenIDConnect Nemlogin
+openid_connect_ad: OpenIDConnect AD
+```
+
+and then go to `/admin/config/system/os2web-nemlogin/«id»` to set up the OpenID
 Connect configuration.
 
-Enable “OpenIDConnect Nemlogin auth provider” on
+You should then see the provider having status `OK` on
 `/admin/config/system/os2web-nemlogin`.
 
 ## Use on a webform
@@ -38,7 +51,7 @@ the form by requiring the value of a field (pre-filled with a value from a
 previous submission) to match the value of a specified user property.
 
 Before using authentication checks, “User claims” available for the checks must
-be defined on `/admin/config/system/os2web-nemlogin/OpenIDConnect`.
+be defined on `/admin/config/system/os2web-nemlogin/«id»`.
 
 Edit a webform, go to Settings > Third Party Settings > OS2Forms > OS2Forms
 NemID settings > Authentication settings and define which “User claim” value
@@ -47,7 +60,7 @@ must match a “Form element” value:
 ![Authentication settings](docs/assets/authentication-settings.png)
 
 Note: The authentication check sits on top of the other access checks in
-OS2Forms, i.e. it does not itself grant access, but adds additonal requirements
+OS2Forms, i.e. it does not itself grant access, but adds additional requirements
 that must be fulfilled before a user can fill in a form.
 
 ## Local test
