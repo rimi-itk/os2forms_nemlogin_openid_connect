@@ -3,8 +3,8 @@
 Implements an [OS2Web NemLog-in
 `AuthProvider`](https://github.com/OS2web/os2web_nemlogin/blob/master/src/Annotation/AuthProvider.php),
 [`OpenIDConnect`](src/Plugin/os2web/NemloginAuthProvider/OpenIDConnect.php), for
-authenticating with [OpenID Connect](https://openid.net/connect/). But allows for multiple of
-these to be defined eg. AD and NemLogin.
+authenticating with [OpenID Connect](https://openid.net/connect/).
+But allows for multiple of these to be defined eg. AD and NemLogin.
 
 A controller,
 [`OpenIDConnectController`](src/Controller/OpenIDConnectController.php), takes
