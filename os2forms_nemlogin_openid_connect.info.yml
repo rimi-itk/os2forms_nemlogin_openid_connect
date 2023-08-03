@@ -13,3 +13,5 @@ dependencies:
   # hook_webform_submission_prepare_form run after the one in os2forms_forloeb.
   - drupal:os2forms_forloeb
   - drupal:os2web_nemlogin
+
+configure: os2forms_nemlogin_openid_connect.admin.settings

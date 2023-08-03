@@ -1,4 +1,4 @@
-{% set title = 'OS2Forms NemLogin OpenID Connect local test users' %}
+{% set title = 'OS2Forms NemLogin OpenID Connect local test users (@id)'|trans({'@id': plugin.pluginId}) %}
 <!doctype html>
 <html lang="en">
   <head>
@@ -25,7 +25,7 @@
         <p>Edit <code>settings.local.php</code> and define local test users:</p>
 
         <pre><code>// User id => user info
-$config['os2forms_nemlogin_openid_connect']['nemlogin_openid_connect_local_test_users'] = [
+$config['os2forms_nemlogin_openid_connect']['{{ plugin.pluginId }}']['nemlogin_openid_connect_local_test_users'] = [
   '1234567890' => [
     'cpr' => '1234567890',
     'name' => 'John Doe',

@@ -7,6 +7,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\os2forms_nemlogin_openid_connect\Helper\Settings;
 use Drupal\os2forms_nemlogin_openid_connect\Helper\WebformHelper;
 use Drupal\webform\WebformSubmissionInterface;
 
@@ -62,8 +63,34 @@ function os2forms_nemlogin_openid_connect_theme(array $existing, string $type, s
     'os2forms_nemlogin_openid_connect_local_test_users' => [
       'variables' => [
         'users' => NULL,
+        'plugin' => NULL,
         'query' => NULL,
       ],
     ],
   ];
+}
+
+/**
+ * Implements hook_os2web_nemlogin_auth_provider_info_alter().
+ *
+ * Adds an OpenIDConnect auth provider for each declared provider.
+ *
+ * @see \Drupal\os2forms_nemlogin_openid_connect\Plugin\os2web\NemloginAuthProvider\OpenIDConnect
+ *
+ * @phpstan-param array<string, mixed> $definitions
+ */
+function os2forms_nemlogin_openid_connect_os2web_nemlogin_auth_provider_info_alter(array &$definitions): void {
+  if (isset($definitions['OpenIDConnect'])) {
+    $template = $definitions['OpenIDConnect'];
+    unset($definitions['OpenIDConnect']);
+
+    $providers = Drupal::service(Settings::class)->getProvidersAsArray();
+
+    foreach ($providers as $id => $label) {
+      $definitions[$id] = [
+        'id' => $id,
+        'label' => $label,
+      ] + $template;
+    }
+  }
 }

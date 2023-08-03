@@ -1,5 +1,5 @@
 os2forms_nemlogin_openid_connect.openid_connect_authenticate:
-  path: '/os2forms_nemlogin_openid_connect/authenticate'
+  path: '/os2forms_nemlogin_openid_connect/authenticate/{id}'
   defaults:
     _controller: 'Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController::main'
   requirements:
@@ -9,7 +9,7 @@ os2forms_nemlogin_openid_connect.openid_connect_authenticate:
     no_cache: 'TRUE'
 
 os2forms_nemlogin_openid_connect.openid_connect_end_session:
-  path: '/os2forms_nemlogin_openid_connect/end-session'
+  path: '/os2forms_nemlogin_openid_connect/end-session/{id}'
   defaults:
     _controller: 'Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController::endSession'
   requirements:
@@ -17,3 +17,11 @@ os2forms_nemlogin_openid_connect.openid_connect_end_session:
     _access: 'TRUE'
   options:
     no_cache: 'TRUE'
+
+os2forms_nemlogin_openid_connect.admin.settings:
+  path: '/admin/os2forms_nemlogin_openid_connect/settings'
+  defaults:
+    _form: '\Drupal\os2forms_nemlogin_openid_connect\Form\SettingsForm'
+    _title: 'OS2Forms NemLogin OpenID Connect settings'
+  requirements:
+    _permission: 'administer site configuration'

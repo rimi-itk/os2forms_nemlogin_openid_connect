@@ -153,6 +153,7 @@ class OpenIDConnect extends AuthProviderBase {
       // Pass the current request uri on to the controller to tell it where to
       // return to after authentication.
       $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', [
+        'id' => $this->getPluginId(),
         OpenIDConnectController::QUERY_LOCATION_NAME => $request->getRequestUri(),
       ])->toString();
 
@@ -176,7 +177,9 @@ class OpenIDConnect extends AuthProviderBase {
     $this->getToken(TRUE);
     $this->values = [];
 
-    $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_end_session')
+    $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_end_session', [
+      'id' => $this->getPluginId(),
+    ])
       ->toString(TRUE)
       ->getGeneratedUrl();
 
@@ -326,8 +329,8 @@ class OpenIDConnect extends AuthProviderBase {
 
     $claims = $form_state->getValue('nemlogin_openid_connect_user_claims');
     try {
-      $value = Yaml::parse($claims);
-      foreach ($value as $name => $value) {
+      $values = Yaml::parse($claims);
+      foreach ($values as $name => $value) {
         if (!is_string($name)) {
           $form_state->setErrorByName(
             'nemlogin_openid_connect_user_claims',
