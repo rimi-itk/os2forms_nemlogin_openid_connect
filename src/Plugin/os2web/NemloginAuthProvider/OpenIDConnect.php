@@ -155,7 +155,9 @@ class OpenIDConnect extends AuthProviderBase {
       $url = Url::fromRoute('os2forms_nemlogin_openid_connect.openid_connect_authenticate', [
         'id' => $this->getPluginId(),
         OpenIDConnectController::QUERY_LOCATION_NAME => $request->getRequestUri(),
-      ])->toString();
+      ])
+        ->toString(TRUE)
+        ->getGeneratedUrl();
 
       return (new LocalRedirectResponse($url))
         ->send();
