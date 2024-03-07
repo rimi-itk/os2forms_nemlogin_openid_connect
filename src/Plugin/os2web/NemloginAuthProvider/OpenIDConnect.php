@@ -121,7 +121,7 @@ class OpenIDConnect extends AuthProviderBase {
     // of value if "fetchOnce" flag is TRUE.
     // It's important that CVR key is empty, since
     // users often login on behalf of company as themselves
-    // i.e. values may contain both a cpr and cvr value,
+    // i.e. values may contain both a cpr and cvr value.
     if (!empty(parent::fetchValue('cpr')) && empty(parent::fetchValue('cvr'))) {
       return TRUE;
     }
