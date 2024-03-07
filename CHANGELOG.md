@@ -6,9 +6,6 @@ All notable changes to this project should be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-See ["how do I make a good changelog record?"](https://keepachangelog.com/en/1.0.0/#how)
-before starting to add changes. Use example [placed in the end of the page](#example-of-change-log-record)
-
 ## [Unreleased]
 
 ## [2.0.1] 2024-03-07
