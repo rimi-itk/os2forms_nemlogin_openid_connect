@@ -1,0 +1,26 @@
+<!-- markdownlint-disable MD024 -->
+# OS2Forms NemLogin OpenID Connect Change Log
+
+All notable changes to this project should be documented in this file.
+
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
+and this project adheres to [Semantic Versioning](http://semver.org/).
+
+See ["how do I make a good changelog record?"](https://keepachangelog.com/en/1.0.0/#how)
+before starting to add changes. Use example [placed in the end of the page](#example-of-change-log-record)
+
+## [Unreleased]
+
+## [2.0.1] 2024-03-07
+
+* Updated person authentication check.
+* Added `CHANGELOG.md`.
+* Added GitHub actions for `CHANGELOG.md`.
+
+## [2.0.0] 2023-08-03
+
+* Allowed multiple providers.
+
+[Unreleased]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.0.1...HEAD
+[2.0.1]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.0.0...2.0.1
+[2.0.0]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/releases/tag/2.0.0
