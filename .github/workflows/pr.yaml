@@ -112,9 +112,9 @@ jobs:
       - name: Install Dependencies
         run: |
           composer install --no-interaction --no-progress
-      - name: twigcs
+      - name: twig-cs-fixer
         run: |
-          composer coding-standards-check/twigcs
+          composer coding-standards-check/twig-cs-fixer
 
   php-code-analysis:
     name: PHP code analysis
