@@ -1,11 +1,25 @@
 {
     "name": "itk-dev/os2forms_nemlogin_openid_connect",
-    "type": "drupal-module",
-    "license": "MIT",
     "description": "os2forms_nemlogin_openid_connect",
+    "license": "MIT",
+    "type": "drupal-module",
     "keywords": [],
     "homepage": "https://www.drupal.org/project/os2forms_nemlogin_openid_connect",
-    "minimum-stability": "dev",
+    "require": {
+        "drupal/webform": "^6.0",
+        "itk-dev/drupal_psr6_cache": "^1.0",
+        "itk-dev/openid-connect": "^3.1",
+        "os2web/os2web_key": "^1.0",
+        "os2web/os2web_nemlogin": "^1.2",
+        "symfony/options-resolver": "^5.4 || ^6.0"
+    },
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "drupal/coder": "^8.3",
+        "ergebnis/composer-normalize": "^2.42",
+        "mglaman/drupal-check": "^1.4",
+        "vincentlanglet/twig-cs-fixer": "^2.8"
+    },
     "repositories": [
         {
             "type": "composer",
@@ -27,37 +41,44 @@
         "mglaman/phpstan-drupal": "~1.2.0",
         "friendsoftwig/twigcs": "^6.0"
     },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "config": {
+        "allow-plugins": {
+            "cweagans/composer-patches": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "ergebnis/composer-normalize": true,
+            "mglaman/composer-drupal-lenient": true,
+            "simplesamlphp/composer-module-installer": true,
+            "zaporylie/composer-drupal-optimizations": true
+        }
+    },
     "scripts": {
-        "code-analysis/drupal-check": [
-            "drupal-check --deprecations --analysis --exclude-dir=vendor *.* src"
-        ],
         "code-analysis": [
             "@code-analysis/drupal-check"
         ],
-        "coding-standards-check/phpcs": [
-            "phpcs --standard=phpcs.xml.dist"
+        "code-analysis/drupal-check": [
+            "drupal-check --deprecations --analysis --exclude-dir=vendor *.* src"
         ],
-        "coding-standards-check/twigcs": [
-            "twigcs templates"
+        "coding-standards-apply": [
+            "@coding-standards-apply/phpcbf",
+            "@coding-standards-apply/twig-cs-fixer"
+        ],
+        "coding-standards-apply/twig-cs-fixer": [
+            "twig-cs-fixer --fix"
+        ],
+        "coding-standards-apply/phpcbf": [
+            "phpcbf --standard=phpcs.xml.dist"
         ],
         "coding-standards-check": [
             "@coding-standards-check/phpcs",
             "@coding-standards-check/twigcs"
         ],
-        "coding-standards-apply/phpcbf": [
-            "phpcbf --standard=phpcs.xml.dist"
+        "coding-standards-check/phpcs": [
+            "phpcs --standard=phpcs.xml.dist"
         ],
-        "coding-standards-apply": [
-            "@coding-standards-apply/phpcbf"
+        "coding-standards-check/twig-cs-fixer": [
+            "twig-cs-fixer"
         ]
-    },
-    "config": {
-        "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true,
-            "zaporylie/composer-drupal-optimizations": true,
-            "cweagans/composer-patches": true,
-            "simplesamlphp/composer-module-installer": true,
-            "mglaman/composer-drupal-lenient": true
-        }
     }
 }

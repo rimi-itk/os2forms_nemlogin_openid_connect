@@ -12,8 +12,11 @@ use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Site\Settings;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
+use Drupal\key\KeyRepositoryInterface;
 use Drupal\os2forms_nemlogin_openid_connect\Exception\AuthenticationException;
 use Drupal\os2forms_nemlogin_openid_connect\Plugin\os2web\NemloginAuthProvider\OpenIDConnect;
+use Drupal\os2web_key\KeyHelper;
+use Drupal\os2web_key\Plugin\KeyType\OidcKeyType;
 use Drupal\os2web_nemlogin\Service\AuthProviderService;
 use ItkDev\OpenIdConnect\Security\OpenIdConfigurationProvider;
 use Psr\Cache\CacheItemPoolInterface;
@@ -77,6 +80,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     private readonly SessionInterface $session,
     private readonly CacheItemPoolInterface $cacheItemPool,
     private readonly LanguageManagerInterface $languageManager,
+    private readonly RendererInterface $renderer,
+    private readonly KeyRepositoryInterface $keyRepository,
+    private readonly KeyHelper $keyHelper,
     LoggerInterface $logger,
     private readonly RendererInterface $renderer,
   ) {
@@ -93,8 +99,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('session'),
       $container->get('drupal_psr6_cache.cache_item_pool'),
       $container->get('language_manager'),
-      $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
       $container->get('renderer'),
+      $container->get('key.repository'),
+      $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
     );
   }
 
@@ -140,12 +147,24 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function getOpenIdConfigurationProvider(): OpenIdConfigurationProvider {
     $pluginConfiguration = $this->plugin->getConfiguration();
 
+    try {
+      $key = $this->keyRepository->getKey($pluginConfiguration[OpenIDConnect::KEY] ?? '');
+      [
+        OidcKeyType::DISCOVERY_URL => $discoveryUrl,
+        OidcKeyType::CLIENT_ID => $clientId,
+        OidcKeyType::CLIENT_SECRET => $clientSecret,
+      ] = $this->keyHelper->getOidcValues($key);
+    }
+    catch (\Exception $e) {
+      throw new AuthenticationException('Cannot get client id and secret', $e->getCode(), $e);
+    }
+
     $providerOptions = [
       'redirectUri' => $this->getRedirectUri(),
-      'openIDConnectMetadataUrl' => $pluginConfiguration['nemlogin_openid_connect_discovery_url'],
+      'openIDConnectMetadataUrl' => $discoveryUrl,
       'cacheItemPool' => $this->cacheItemPool,
-      'clientId' => $pluginConfiguration['nemlogin_openid_connect_client_id'],
-      'clientSecret' => $pluginConfiguration['nemlogin_openid_connect_client_secret'],
+      'clientId' => $clientId,
+      'clientSecret' => $clientSecret,
       'localTestMode' => FALSE,
       'allowHttp' => (bool) ($this->getSettings()['allow_http'] ?? FALSE),
     ];
@@ -273,7 +292,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function getPostLogoutRedirectUri(): string {
     try {
       $pluginConfiguration = $this->plugin->getConfiguration();
-      $url = $pluginConfiguration['nemlogin_openid_connect_post_logout_redirect_uri'] ?? '/';
+      $url = $pluginConfiguration[self::POST_LOGOUT_REDIRECT_URI] ?? '/';
       $options = [
         'absolute' => TRUE,
         'path_processing' => FALSE,
