@@ -292,7 +292,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function getPostLogoutRedirectUri(): string {
     try {
       $pluginConfiguration = $this->plugin->getConfiguration();
-      $url = $pluginConfiguration[self::POST_LOGOUT_REDIRECT_URI] ?? '/';
+      $url = $pluginConfiguration[OpenIDConnect::POST_LOGOUT_REDIRECT_URI] ?? '/';
       $options = [
         'absolute' => TRUE,
         'path_processing' => FALSE,
