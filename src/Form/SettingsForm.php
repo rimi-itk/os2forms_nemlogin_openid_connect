@@ -81,9 +81,8 @@ final class SettingsForm extends FormBase {
    *
    * @phpstan-param array<string, mixed> $form
    */
-  public function validateForm(array &$form, FormStateInterface $formState): void {
-
-    $providers = $formState->getValue(self::PROVIDERS);
+  public function validateForm(array &$form, FormStateInterface $form_state): void {
+    $providers = $form_state->getValue(self::PROVIDERS);
 
     try {
       $values = Yaml::parse($providers);
@@ -92,7 +91,7 @@ final class SettingsForm extends FormBase {
       }
       foreach ($values as $name => $value) {
         if (!is_string($name)) {
-          $formState->setErrorByName(
+          $form_state->setErrorByName(
             self::PROVIDERS,
             $this->t('Name (@name) must be a string; found @type.', [
               '@name' => $name,
@@ -102,7 +101,7 @@ final class SettingsForm extends FormBase {
           break;
         }
         if (!is_string($value)) {
-          $formState->setErrorByName(
+          $form_state->setErrorByName(
             self::PROVIDERS,
             $this->t('Value for “@name” must be a string; found @type.', [
               '@name' => $name,
@@ -114,7 +113,7 @@ final class SettingsForm extends FormBase {
       }
     }
     catch (ParseException $exception) {
-      $formState->setErrorByName(self::PROVIDERS, $this->t('Invalid providers (@message)', ['@message' => $exception->getMessage()]));
+      $form_state->setErrorByName(self::PROVIDERS, $this->t('Invalid providers (@message)', ['@message' => $exception->getMessage()]));
     }
   }
 
@@ -123,10 +122,9 @@ final class SettingsForm extends FormBase {
    *
    * @phpstan-param array<string, mixed> $form
    */
-  public function submitForm(array &$form, FormStateInterface $formState): void {
-
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
     try {
-      $settings[self::PROVIDERS] = $formState->getValue(self::PROVIDERS);
+      $settings[self::PROVIDERS] = $form_state->getValue(self::PROVIDERS);
 
       $this->settings->setSettings($settings);
       $this->messenger()->addStatus($this->t('Settings saved'));
