@@ -265,7 +265,6 @@ class OpenIDConnect extends AuthProviderBase {
     return $value;
   }
 
-  public const DISCOVERY_URL = 'nemlogin_openid_connect_discovery_url';
   public const KEY = 'nemlogin_openid_connect_key';
   public const FETCH_ONCE = 'nemlogin_openid_connect_fetch_once';
   public const POST_LOGOUT_REDIRECT_URI = 'nemlogin_openid_connect_post_logout_redirect_uri';
@@ -281,7 +280,6 @@ class OpenIDConnect extends AuthProviderBase {
    */
   public function defaultConfiguration() {
     return parent::defaultConfiguration() + [
-      self::DISCOVERY_URL => '',
       self::KEY => '',
       self::FETCH_ONCE => '',
       self::POST_LOGOUT_REDIRECT_URI => '',
@@ -296,15 +294,6 @@ class OpenIDConnect extends AuthProviderBase {
    * @phpstan-return array<string, mixed>
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
-    $form[self::DISCOVERY_URL] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('OpenID Connect Discovery url'),
-      // Our urls are very long.
-      '#maxlength' => 256,
-      '#required' => TRUE,
-      '#default_value' => $this->configuration[self::DISCOVERY_URL] ?? NULL,
-      '#description' => $this->t('OpenID Connect Discovery url (cf. <a href="https://swagger.io/docs/specification/authentication/openid-connect-discovery/">https://swagger.io/docs/specification/authentication/openid-connect-discovery/</a>)'),
-    ];
     $form[self::KEY] = [
       '#type' => 'key_select',
       '#key_filters' => [
@@ -345,12 +334,6 @@ class OpenIDConnect extends AuthProviderBase {
    * @phpstan-param array<string, mixed> $form
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
-    $url = $form_state->getValue(self::DISCOVERY_URL);
-
-    if (!UrlHelper::isValid($url, TRUE)) {
-      $form_state->setErrorByName(self::DISCOVERY_URL, $this->t('Url is not valid'));
-    }
-
     $url = $form_state->getValue(self::POST_LOGOUT_REDIRECT_URI);
     try {
       UrlHelper::isExternal($url) ? Url::fromUri($url) : Url::fromUserInput($url);
@@ -398,7 +381,6 @@ class OpenIDConnect extends AuthProviderBase {
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     $configuration = $this->getConfiguration();
 
-    $configuration[self::DISCOVERY_URL] = $form_state->getValue(self::DISCOVERY_URL);
     $configuration[self::KEY] = $form_state->getValue(self::KEY);
     $configuration[self::FETCH_ONCE] = $form_state->getValue(self::FETCH_ONCE);
     $configuration[self::POST_LOGOUT_REDIRECT_URI] = $form_state->getValue(self::POST_LOGOUT_REDIRECT_URI);

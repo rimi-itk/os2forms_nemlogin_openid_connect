@@ -101,6 +101,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       $container->get('language_manager'),
       $container->get('renderer'),
       $container->get('key.repository'),
+      $container->get(KeyHelper::class),
       $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
     );
   }
@@ -148,7 +149,11 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     $pluginConfiguration = $this->plugin->getConfiguration();
 
     try {
-      $key = $this->keyRepository->getKey($pluginConfiguration[OpenIDConnect::KEY] ?? '');
+      $keyId = $pluginConfiguration[OpenIDConnect::KEY] ?? '';
+      $key = $this->keyRepository->getKey($keyId);
+      if (NULL === $key) {
+        throw new \RuntimeException(sprintf('Cannot get key %s', $keyId));
+      }
       [
         OidcKeyType::DISCOVERY_URL => $discoveryUrl,
         OidcKeyType::CLIENT_ID => $clientId,
