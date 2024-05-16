@@ -4,6 +4,7 @@ namespace Drupal\os2forms_nemlogin_openid_connect\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\os2forms_nemlogin_openid_connect\Helper\Settings;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -72,6 +73,41 @@ final class SettingsForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t('Save settings'),
     ];
+
+    try {
+      $providers = Yaml::parse($providers);
+
+      $form['info'] = [
+        '#type' => 'details',
+        '#open' => TRUE,
+        '#title' => $this->t('Provider details'),
+        '#weight' => 9999,
+      ];
+
+      $form['info']['table'] = [
+        '#theme' => 'table',
+        '#header' => [
+          ['data' => 'Id'],
+          ['data' => 'Label'],
+          ['data' => 'Redirect URI'],
+          ['data' => ''],
+        ],
+        '#rows' => array_map(fn ($id, $provider) => [
+          'data' => [
+            ['data' => $id],
+            ['data' => $provider],
+            ['data' => Link::createFromRoute($provider, 'os2forms_nemlogin_openid_connect.openid_connect_authenticate', ['id' => $id])->toRenderable()],
+            ['data' => Link::createFromRoute($this->t('Edit'), 'os2web_nemlogin.auth_provider.' . $id)->toRenderable()],
+          ],
+        ],
+          array_keys($providers),
+          $providers
+        ),
+      ];
+    }
+    catch (\Exception $e) {
+      // Ignore all exception.
+    }
 
     return $form;
   }
