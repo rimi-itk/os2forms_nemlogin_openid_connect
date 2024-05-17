@@ -84,7 +84,6 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     private readonly KeyRepositoryInterface $keyRepository,
     private readonly KeyHelper $keyHelper,
     LoggerInterface $logger,
-    private readonly RendererInterface $renderer,
   ) {
     $this->setLogger($logger);
   }
