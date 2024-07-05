@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] 2024-07-05
+
+* Drupal 10 compatibility.
+
 ## [2.0.1] 2024-03-07
 
 * Updated person authentication check.
@@ -18,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 * Allowed multiple providers.
 
-[Unreleased]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.0.1...HEAD
+[Unreleased]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.1.0...HEAD
+[2.1.0]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.0.1...2.1.0
 [2.0.1]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/compare/2.0.0...2.0.1
 [2.0.0]: https://github.com/itk-dev/os2forms_nemlogin_openid_connect/releases/tag/2.0.0

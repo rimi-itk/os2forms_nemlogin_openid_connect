@@ -1,11 +1,8 @@
 name: 'os2forms_nemlogin_openid_connect'
 type: module
 description: 'os2forms_nemlogin_openid_connect'
-core: 8.x
 package: 'Custom'
-
-core_version_requirement: ^8 || ^9
-
+core_version_requirement: ^9 || ^10
 dependencies:
   - drupal:drupal_psr6_cache
   - drupal:os2forms
