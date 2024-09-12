@@ -78,7 +78,8 @@ class OpenIDConnectController implements ContainerInjectionInterface {
     private readonly CacheItemPoolInterface $cacheItemPool,
     private readonly LanguageManagerInterface $languageManager,
     LoggerInterface $logger,
-    private readonly RendererInterface $renderer) {
+    private readonly RendererInterface $renderer,
+  ) {
     $this->setLogger($logger);
   }
 
