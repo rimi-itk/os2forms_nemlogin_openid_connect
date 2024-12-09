@@ -8,6 +8,7 @@ use Drupal\Core\Routing\LocalRedirectResponse;
 use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
 use Drupal\os2forms_nemlogin_openid_connect\Controller\OpenIDConnectController;
+use Drupal\os2web_audit\Service\Logger;
 use Drupal\os2web_nemlogin\Form\AuthProviderBaseSettingsForm;
 use Drupal\os2web_nemlogin\Plugin\AuthProviderBase;
 use Psr\Log\LoggerAwareTrait;
@@ -58,15 +59,31 @@ class OpenIDConnect extends AuthProviderBase {
   private $session;
 
   /**
+   * The audit logger.
+   *
+   * @var \Drupal\os2web_audit\Service\Logger
+   */
+  private $auditLogger;
+
+  /**
    * {@inheritdoc}
    *
    * @phpstan-param array<string, mixed> $configuration
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, RequestStack $requestStack, SessionInterface $session, LoggerInterface $logger) {
+  public function __construct(
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    RequestStack $requestStack,
+    SessionInterface $session,
+    LoggerInterface $logger,
+    Logger $auditLogger,
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->session = $session;
     $this->requestStack = $requestStack;
     $this->setLogger($logger);
+    $this->auditLogger = $auditLogger;
 
     $this->values = $this->getToken() ?? [];
   }
@@ -89,7 +106,8 @@ class OpenIDConnect extends AuthProviderBase {
       $plugin_definition,
       $container->get('request_stack'),
       $container->get('session'),
-      $container->get('logger.channel.os2forms_nemlogin_openid_connect')
+      $container->get('logger.channel.os2forms_nemlogin_openid_connect'),
+      $container->get('os2web_audit.logger')
     );
   }
 
@@ -168,6 +186,9 @@ class OpenIDConnect extends AuthProviderBase {
 
     $this->values = $token;
 
+    $msg = sprintf('Login succeeded through %s with claims, %s', $this->getPluginId(), $this->getClaimDataString());
+    $this->auditLogger->info('OpenIdConnect', $msg);
+
     return (new TrustedRedirectResponse($this->getReturnUrl()))
       ->send();
   }
@@ -179,6 +200,8 @@ class OpenIDConnect extends AuthProviderBase {
    *   The response.
    */
   public function logout() {
+    $msg = sprintf('Logout succeeded through %s with claims, %s', $this->getPluginId(), $this->getClaimDataString());
+
     $this->getToken(TRUE);
     $this->values = [];
 
@@ -187,6 +210,8 @@ class OpenIDConnect extends AuthProviderBase {
     ])
       ->toString(TRUE)
       ->getGeneratedUrl();
+
+    $this->auditLogger->info('OpenIdConnect', $msg);
 
     return (new TrustedRedirectResponse($url))
       ->send();
@@ -392,6 +417,50 @@ class OpenIDConnect extends AuthProviderBase {
     if (NULL !== $this->logger) {
       $this->logger->log($level, $message, $context);
     }
+  }
+
+  /**
+   * Get string of claim data.
+   */
+  private function getClaimDataString(): string {
+    $claimKeys = $this->getClaimKeys();
+
+    $claims = [];
+
+    foreach ($claimKeys as $claimKey) {
+      $claimValue = $this->fetchValue($claimKey);
+      if (!empty($claimValue)) {
+        $claims[] = $claimKey . ': ' . $this->fetchValue($claimKey);
+      }
+    }
+
+    return implode(', ', $claims);
+  }
+
+  /**
+   * Get claim keys.
+   *
+   * @phpstan-return array<int, mixed>
+   */
+  private function getClaimKeys(): array {
+    // Example claim configuration:
+    // "name: Navn\r\nemail: E-mailadresse".
+    $claims = $this->configuration['nemlogin_openid_connect_user_claims'];
+
+    if (empty($claims)) {
+      return [];
+    }
+
+    $pairs = explode("\r\n", $claims);
+
+    $keys = [];
+
+    foreach ($pairs as $pair) {
+      $keyValue = explode(': ', $pair);
+      $keys[] = $keyValue[0];
+    }
+
+    return $keys;
   }
 
 }

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+* Added audit logging via `os2web/os2web_audit`.
+
 ## [2.1.0] 2024-07-05
 
 * Drupal 10 compatibility.
