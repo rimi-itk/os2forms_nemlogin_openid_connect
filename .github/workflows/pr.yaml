@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.3' ]
         dependency-version: [ prefer-lowest, prefer-stable ]
     steps:
       - uses: actions/checkout@master
@@ -55,7 +55,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.3' ]
         dependency-version: [ prefer-lowest, prefer-stable ]
     steps:
       - uses: actions/checkout@master
@@ -88,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.3' ]
         dependency-version: [ prefer-lowest, prefer-stable ]
     steps:
       - uses: actions/checkout@master
@@ -121,7 +121,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php-versions: [ '8.1' ]
+        php-versions: [ '8.3' ]
         dependency-version: [ prefer-lowest, prefer-stable ]
     steps:
       - uses: actions/checkout@master
@@ -146,14 +146,24 @@ jobs:
         run: |
           # We need a Drupal project to run drupal-check (cf. https://github.com/mglaman/drupal-check#usage)
           # Install Drupal
-          composer --no-interaction create-project drupal/recommended-project:^9 --stability=dev drupal
+          composer --no-interaction create-project drupal/recommended-project:^10 --stability=dev drupal
           # Copy our module source code into the Drupal module folder.
           mkdir -p drupal/web/modules/contrib/os2forms_nemlogin_openid_connect
           cp -r os2forms_nemlogin_openid_connect.* composer.json src drupal/web/modules/contrib/os2forms_nemlogin_openid_connect
+
+          # Allow all plugins
+          composer --working-dir=drupal config --no-plugins allow-plugins true
+
           # Add our module as a composer repository.
           composer --no-interaction --working-dir=drupal config repositories.itk-dev/os2forms_nemlogin_openid_connect path web/modules/contrib/os2forms_nemlogin_openid_connect
+
           # Restore Drupal composer repository.
           composer --no-interaction --working-dir=drupal config repositories.drupal composer https://packages.drupal.org/8
+
+          # Make Drupal 10 compatible
+          composer --working-dir=drupal --no-interaction require psr/http-message:^1.0
+          composer --working-dir=drupal --no-interaction require 'mglaman/composer-drupal-lenient'
+          composer --working-dir=drupal config --no-plugins --merge --json extra.drupal-lenient.allowed-list '["drupal/coc_forms_auto_export", "drupal/webform_node_element"]'
 
           # Require our module.
           composer --no-interaction --working-dir=drupal require 'itk-dev/os2forms_nemlogin_openid_connect:*'

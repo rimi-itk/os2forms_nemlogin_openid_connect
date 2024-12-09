@@ -176,12 +176,9 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    *   The session attribute name.
    * @param mixed $value
    *   The session attribute value.
-   *
-   * @return mixed
-   *   The value.
    */
-  private function setSessionValue(string $name, $value) {
-    return $this->session->set($name, $value);
+  private function setSessionValue(string $name, $value): void {
+    $this->session->set($name, $value);
   }
 
   /**
@@ -352,7 +349,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
           '#query' => ['id' => $this->getPluginId()] + $request->query->all(),
         ];
 
-        return new Response($this->renderer->renderPlain($renderable));
+        return new Response($this->renderer->renderInIsolation($renderable));
       }
     }
     else {
@@ -417,7 +414,7 @@ class OpenIDConnectController implements ContainerInjectionInterface {
    *
    * @phpstan-return array<string, mixed>
    */
-  private function displayError(string $message, string $description = NULL): array {
+  private function displayError(string $message, ?string $description = NULL): array {
     $request = $this->requestStack->getCurrentRequest();
     $this->error('Error', [
       'query' => $request->query->all(),
