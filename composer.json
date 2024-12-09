@@ -52,7 +52,11 @@
     },
     "config": {
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "zaporylie/composer-drupal-optimizations": true,
+            "cweagans/composer-patches": true,
+            "simplesamlphp/composer-module-installer": true,
+            "mglaman/composer-drupal-lenient": true
         }
     }
 }
