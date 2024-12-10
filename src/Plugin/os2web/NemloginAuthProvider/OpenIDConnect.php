@@ -430,7 +430,10 @@ class OpenIDConnect extends AuthProviderBase {
     foreach ($claimKeys as $claimKey) {
       $claimValue = $this->fetchValue($claimKey);
       if (!empty($claimValue)) {
-        $claims[] = $claimKey . ': ' . $this->fetchValue($claimKey);
+        $claims[] = $claimKey . ': ' . $claimValue;
+      }
+      else {
+        $this->logger->debug(sprintf('OpenIDConnect (%s): Missing claim %s', $this->getPluginId(), $claimKey));
       }
     }
 
