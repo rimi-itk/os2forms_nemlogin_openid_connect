@@ -4,6 +4,7 @@ namespace Drupal\os2forms_nemlogin_openid_connect\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Link;
 use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\os2forms_nemlogin_openid_connect\Helper\Settings;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -73,6 +74,41 @@ final class SettingsForm extends FormBase {
       '#value' => $this->t('Save settings'),
     ];
 
+    try {
+      $providers = Yaml::parse($providers);
+
+      $form['info'] = [
+        '#type' => 'details',
+        '#open' => TRUE,
+        '#title' => $this->t('Provider details'),
+        '#weight' => 9999,
+      ];
+
+      $form['info']['table'] = [
+        '#theme' => 'table',
+        '#header' => [
+          ['data' => 'Id'],
+          ['data' => 'Label'],
+          ['data' => 'Redirect URI'],
+          ['data' => ''],
+        ],
+        '#rows' => array_map(fn ($id, $provider) => [
+          'data' => [
+            ['data' => $id],
+            ['data' => $provider],
+            ['data' => Link::createFromRoute($provider, 'os2forms_nemlogin_openid_connect.openid_connect_authenticate', ['id' => $id])->toRenderable()],
+            ['data' => Link::createFromRoute($this->t('Edit'), 'os2web_nemlogin.auth_provider.' . $id)->toRenderable()],
+          ],
+        ],
+          array_keys($providers),
+          $providers
+        ),
+      ];
+    }
+    catch (\Exception $e) {
+      // Ignore all exception.
+    }
+
     return $form;
   }
 
@@ -81,9 +117,8 @@ final class SettingsForm extends FormBase {
    *
    * @phpstan-param array<string, mixed> $form
    */
-  public function validateForm(array &$form, FormStateInterface $formState): void {
-
-    $providers = $formState->getValue(self::PROVIDERS);
+  public function validateForm(array &$form, FormStateInterface $form_state): void {
+    $providers = $form_state->getValue(self::PROVIDERS);
 
     try {
       $values = Yaml::parse($providers);
@@ -92,7 +127,7 @@ final class SettingsForm extends FormBase {
       }
       foreach ($values as $name => $value) {
         if (!is_string($name)) {
-          $formState->setErrorByName(
+          $form_state->setErrorByName(
             self::PROVIDERS,
             $this->t('Name (@name) must be a string; found @type.', [
               '@name' => $name,
@@ -102,7 +137,7 @@ final class SettingsForm extends FormBase {
           break;
         }
         if (!is_string($value)) {
-          $formState->setErrorByName(
+          $form_state->setErrorByName(
             self::PROVIDERS,
             $this->t('Value for “@name” must be a string; found @type.', [
               '@name' => $name,
@@ -114,7 +149,7 @@ final class SettingsForm extends FormBase {
       }
     }
     catch (ParseException $exception) {
-      $formState->setErrorByName(self::PROVIDERS, $this->t('Invalid providers (@message)', ['@message' => $exception->getMessage()]));
+      $form_state->setErrorByName(self::PROVIDERS, $this->t('Invalid providers (@message)', ['@message' => $exception->getMessage()]));
     }
   }
 
@@ -123,10 +158,9 @@ final class SettingsForm extends FormBase {
    *
    * @phpstan-param array<string, mixed> $form
    */
-  public function submitForm(array &$form, FormStateInterface $formState): void {
-
+  public function submitForm(array &$form, FormStateInterface $form_state): void {
     try {
-      $settings[self::PROVIDERS] = $formState->getValue(self::PROVIDERS);
+      $settings[self::PROVIDERS] = $form_state->getValue(self::PROVIDERS);
 
       $this->settings->setSettings($settings);
       $this->messenger()->addStatus($this->t('Settings saved'));

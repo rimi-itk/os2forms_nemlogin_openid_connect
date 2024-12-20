@@ -11,5 +11,6 @@ dependencies:
   - drupal:os2forms_forloeb
   - drupal:os2web_nemlogin
   - os2web:os2web_audit
+  - os2web_key:os2web_key
 
 configure: os2forms_nemlogin_openid_connect.admin.settings
