@@ -18,6 +18,7 @@
         "drupal/coder": "^8.3",
         "ergebnis/composer-normalize": "^2.42",
         "mglaman/drupal-check": "^1.4",
+        "mglaman/phpstan-drupal": "~1.2.0",
         "vincentlanglet/twig-cs-fixer": "^2.8"
     },
     "repositories": [
