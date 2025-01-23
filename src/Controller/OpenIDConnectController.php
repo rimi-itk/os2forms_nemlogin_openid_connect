@@ -170,7 +170,6 @@ class OpenIDConnectController implements ContainerInjectionInterface {
       }
     }
 
-
     $providerOptions = [
       'redirectUri' => $this->getRedirectUri(),
       'openIDConnectMetadataUrl' => $discoveryUrl,
