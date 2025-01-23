@@ -32,10 +32,17 @@ class OpenIDConnect extends AuthProviderBase {
   use LoggerTrait;
   use LoggerAwareTrait;
 
-  /**
-   * Session name for storing OIDC user token.
-   */
-  private const SESSION_TOKEN = 'os2forms_nemlogin_openid_connect.user_token';
+  public const SESSION_TOKEN = 'os2forms_nemlogin_openid_connect.user_token';
+  public const KEY = 'nemlogin_openid_connect_key';
+  public const SECRET_PROVIDER = 'secret_provider';
+  public const PROVIDER_TYPE_FORM = 'form';
+  public const PROVIDER_TYPE_KEY = 'key';
+  public const FETCH_ONCE = 'nemlogin_openid_connect_fetch_once';
+  public const POST_LOGOUT_REDIRECT_URI = 'nemlogin_openid_connect_post_logout_redirect_uri';
+  public const USER_CLAIMS = 'nemlogin_openid_connect_user_claims';
+  public const DISCOVERY_URL = 'nemlogin_openid_connect_discovery_url';
+  public const CLIENT_ID = 'nemlogin_openid_connect_client_id';
+  public const CLIENT_SECRET = 'nemlogin_openid_connect_client_secret';
 
   /**
    * Fetch only mode flag.
@@ -115,8 +122,8 @@ class OpenIDConnect extends AuthProviderBase {
    * {@inheritdoc}
    */
   public function isInitialized() {
-    $configuration = $configuration = $this->getConfiguration();
-    if (!empty($configuration['nemlogin_openid_connect_discovery_url'])) {
+    $configuration = $this->getConfiguration();
+    if (!empty($configuration[self::DISCOVERY_URL])) {
       return TRUE;
     }
 
@@ -265,11 +272,6 @@ class OpenIDConnect extends AuthProviderBase {
     return $value;
   }
 
-  public const KEY = 'nemlogin_openid_connect_key';
-  public const FETCH_ONCE = 'nemlogin_openid_connect_fetch_once';
-  public const POST_LOGOUT_REDIRECT_URI = 'nemlogin_openid_connect_post_logout_redirect_uri';
-  public const USER_CLAIMS = 'nemlogin_openid_connect_user_claims';
-
   /**
    * {@inheritdoc}
    *
@@ -280,6 +282,10 @@ class OpenIDConnect extends AuthProviderBase {
    */
   public function defaultConfiguration() {
     return parent::defaultConfiguration() + [
+      self::SECRET_PROVIDER => self::PROVIDER_TYPE_FORM,
+      self::DISCOVERY_URL => '',
+      self::CLIENT_ID => '',
+      self::CLIENT_SECRET => '',
       self::KEY => '',
       self::FETCH_ONCE => '',
       self::POST_LOGOUT_REDIRECT_URI => '',
@@ -294,15 +300,79 @@ class OpenIDConnect extends AuthProviderBase {
    * @phpstan-return array<string, mixed>
    */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state): array {
+
+    $form[self::SECRET_PROVIDER] = [
+      '#type' => 'select',
+      '#title' => $this->t('Provider'),
+      '#options' => [
+        self::PROVIDER_TYPE_FORM => $this->t('Form'),
+        self::PROVIDER_TYPE_KEY => $this->t('Key'),
+      ],
+      '#default_value' => $this->configuration[self::SECRET_PROVIDER] ?? self::PROVIDER_TYPE_FORM,
+    ];
+
+    $form[self::DISCOVERY_URL] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('OpenID Connect Discovery url'),
+      // Our urls are very long.
+      '#maxlength' => 256,
+      '#default_value' => $this->configuration[self::DISCOVERY_URL] ?? NULL,
+      '#description' => $this->t('OpenID Connect Discovery url (cf. <a href="https://swagger.io/docs/specification/authentication/openid-connect-discovery/">https://swagger.io/docs/specification/authentication/openid-connect-discovery/</a>)'),
+      '#states' => [
+        'visible' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+        'required' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+      ],
+    ];
+
+    $form[self::CLIENT_ID] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Client id'),
+      '#default_value' => $this->configuration[self::CLIENT_ID] ?? NULL,
+      '#states' => [
+        'visible' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+        'required' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+      ],
+    ];
+
+    $form[self::CLIENT_SECRET] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Client secret'),
+      '#default_value' => $this->configuration[self::CLIENT_SECRET] ?? NULL,
+      '#states' => [
+        'visible' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+        'required' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_FORM]],
+        ],
+      ],
+    ];
+
     $form[self::KEY] = [
       '#type' => 'key_select',
       '#key_filters' => [
         'type' => 'os2web_key_oidc',
       ],
       '#title' => $this->t('Key'),
-      '#required' => TRUE,
       '#default_value' => $this->configuration[self::KEY] ?? NULL,
+      '#states' => [
+        'visible' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_KEY]],
+        ],
+        'required' => [
+          [':input[name="secret_provider"]' => ['value' => self::PROVIDER_TYPE_KEY]],
+        ],
+      ],
     ];
+
     $form[self::FETCH_ONCE] = [
       '#type' => 'checkbox',
       '#title' => $this->t('Use fetch only mode.'),
@@ -334,9 +404,19 @@ class OpenIDConnect extends AuthProviderBase {
    * @phpstan-param array<string, mixed> $form
    */
   public function validateConfigurationForm(array &$form, FormStateInterface $form_state): void {
-    $url = $form_state->getValue(self::POST_LOGOUT_REDIRECT_URI);
+
+    if (self::PROVIDER_TYPE_FORM === $form_state->getValue(self::SECRET_PROVIDER)) {
+
+      $discoveryUrl = $form_state->getValue(self::DISCOVERY_URL);
+
+      if (!UrlHelper::isValid($discoveryUrl, TRUE)) {
+        $form_state->setErrorByName(self::DISCOVERY_URL, $this->t('Discovery url is not valid'));
+      }
+    }
+
+    $redirectUrl = $form_state->getValue(self::POST_LOGOUT_REDIRECT_URI);
     try {
-      UrlHelper::isExternal($url) ? Url::fromUri($url) : Url::fromUserInput($url);
+      UrlHelper::isExternal($redirectUrl) ? Url::fromUri($redirectUrl) : Url::fromUserInput($redirectUrl);
     }
     catch (\Exception $exception) {
       $form_state->setErrorByName(self::POST_LOGOUT_REDIRECT_URI, $this->t('Post logout redirect url is not valid (@message)', ['@message' => $exception->getMessage()]));
@@ -381,6 +461,10 @@ class OpenIDConnect extends AuthProviderBase {
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state): void {
     $configuration = $this->getConfiguration();
 
+    $configuration[self::SECRET_PROVIDER] = $form_state->getValue(self::SECRET_PROVIDER);
+    $configuration[self::DISCOVERY_URL] = $form_state->getValue(self::DISCOVERY_URL);
+    $configuration[self::CLIENT_ID] = $form_state->getValue(self::CLIENT_ID);
+    $configuration[self::CLIENT_SECRET] = $form_state->getValue(self::CLIENT_SECRET);
     $configuration[self::KEY] = $form_state->getValue(self::KEY);
     $configuration[self::FETCH_ONCE] = $form_state->getValue(self::FETCH_ONCE);
     $configuration[self::POST_LOGOUT_REDIRECT_URI] = $form_state->getValue(self::POST_LOGOUT_REDIRECT_URI);
