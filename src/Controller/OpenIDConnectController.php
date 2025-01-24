@@ -147,20 +147,27 @@ class OpenIDConnectController implements ContainerInjectionInterface {
   private function getOpenIdConfigurationProvider(): OpenIdConfigurationProvider {
     $pluginConfiguration = $this->plugin->getConfiguration();
 
-    try {
-      $keyId = $pluginConfiguration[OpenIDConnect::KEY] ?? '';
-      $key = $this->keyRepository->getKey($keyId);
-      if (NULL === $key) {
-        throw new \RuntimeException(sprintf('Cannot get key %s', $keyId));
-      }
-      [
-        OidcKeyType::DISCOVERY_URL => $discoveryUrl,
-        OidcKeyType::CLIENT_ID => $clientId,
-        OidcKeyType::CLIENT_SECRET => $clientSecret,
-      ] = $this->keyHelper->getOidcValues($key);
+    if (OpenIDConnect::PROVIDER_TYPE_KEY === $pluginConfiguration[OpenIDConnect::PROVIDER_TYPE_KEY]) {
+      $discoveryUrl = $pluginConfiguration[OpenIDConnect::DISCOVERY_URL];
+      $clientId = $pluginConfiguration[OpenIDConnect::CLIENT_ID];
+      $clientSecret = $pluginConfiguration[OpenIDConnect::CLIENT_SECRET];
     }
-    catch (\Exception $e) {
-      throw new AuthenticationException('Cannot get client id and secret', $e->getCode(), $e);
+    else {
+      try {
+        $keyId = $pluginConfiguration[OpenIDConnect::KEY] ?? '';
+        $key = $this->keyRepository->getKey($keyId);
+        if (NULL === $key) {
+          throw new \RuntimeException(sprintf('Cannot get key %s', $keyId));
+        }
+        [
+          OidcKeyType::DISCOVERY_URL => $discoveryUrl,
+          OidcKeyType::CLIENT_ID => $clientId,
+          OidcKeyType::CLIENT_SECRET => $clientSecret,
+        ] = $this->keyHelper->getOidcValues($key);
+      }
+      catch (\Exception $e) {
+        throw new AuthenticationException('Cannot get client id and secret', $e->getCode(), $e);
+      }
     }
 
     $providerOptions = [

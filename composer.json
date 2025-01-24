@@ -9,6 +9,7 @@
         "drupal/webform": "^6.0",
         "itk-dev/drupal_psr6_cache": "^1.0",
         "itk-dev/openid-connect": "^3.1",
+        "os2forms/os2forms": "^3.17",
         "os2web/os2web_key": "^1.0",
         "os2web/os2web_nemlogin": "^1.2",
         "symfony/options-resolver": "^5.4 || ^6.0"
@@ -18,6 +19,7 @@
         "drupal/coder": "^8.3",
         "ergebnis/composer-normalize": "^2.42",
         "mglaman/drupal-check": "^1.4",
+        "mglaman/phpstan-drupal": "~1.2.0",
         "vincentlanglet/twig-cs-fixer": "^2.8"
     },
     "repositories": [
@@ -26,21 +28,6 @@
             "url": "https://packages.drupal.org/8"
         }
     ],
-    "require": {
-        "itk-dev/openid-connect": "^3.1",
-        "itk-dev/drupal_psr6_cache": "^1.0",
-        "os2forms/os2forms": "^3.17",
-        "os2web/os2web_nemlogin": "^1.2",
-        "drupal/webform": "^6.0",
-        "symfony/options-resolver": "^5.4 || ^6.0"
-    },
-    "require-dev": {
-        "drupal/coder": "^8.3",
-        "dealerdirect/phpcodesniffer-composer-installer": "^0.7.1",
-        "mglaman/drupal-check": "^1.4",
-        "mglaman/phpstan-drupal": "~1.2.0",
-        "friendsoftwig/twigcs": "^6.0"
-    },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "config": {
@@ -64,11 +51,11 @@
             "@coding-standards-apply/phpcbf",
             "@coding-standards-apply/twig-cs-fixer"
         ],
-        "coding-standards-apply/twig-cs-fixer": [
-            "twig-cs-fixer --fix"
-        ],
         "coding-standards-apply/phpcbf": [
             "phpcbf --standard=phpcs.xml.dist"
+        ],
+        "coding-standards-apply/twig-cs-fixer": [
+            "twig-cs-fixer --fix"
         ],
         "coding-standards-check": [
             "@coding-standards-check/phpcs",
